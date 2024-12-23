@@ -16,11 +16,11 @@ source("Functions.R")
   L_inf <- 500
   t_0 <- 1
   CV_L <- 0.1
-  sel_1 <- seq(0, 400, 40) #all varied params must be same length for surface plot
-  sel_2 <- 10#seq(10, 110, 10) #cope set to ~100
+  sel_1 <- seq(0, 400, 80) #all varied params must be same length for surface plot
+  sel_2 <- seq(10, 110, 20) #cope set to ~100
   sig_r <- 0.6
-  CV_Age <- seq(0, 0.2, 0.02)
-  sample_size <- 500#c(100,500,1000)
+  CV_Age <- seq(0, 0.2, 0.04)
+  sample_size <- c(100,500)
   
   #Create a data frames with all possible combinations
   #blackgill
@@ -60,7 +60,7 @@ source("Functions.R")
   calico_scenario <- combinations_matrix
 }
 
-n_iter <- 10
+n_iter <- 100
 
 set.seed(51)
 blackgill_results <- apply(blackgill_scenario, 1, run_OM, n_iter = n_iter)

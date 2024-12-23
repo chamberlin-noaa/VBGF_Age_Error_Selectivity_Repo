@@ -1,14 +1,6 @@
 library(plotly)
 library(reshape2)
 
-df <- blackgill_results_df
-sample_size_n <- 500
-subset_param <- "sel_2"
-subset_param_value <- 21 
-x_param <- "sel_1"
-y_param <- "CV_Age"
-z_param <- "mean_re_L_inf"
-
 #3-D Surface plots
 surface_plot <- function(df, sample_size_n, subset_param, subset_param_value, x_param, y_param, z_param){
   plot_data <- subset(df, sample_size == as.numeric(sample_size_n))
@@ -39,13 +31,15 @@ blackgill_k_plot <- surface_plot(blackgill_results_df, 500, "sel_2", 10, "sel_1"
 blackgill_t_0_plot <- surface_plot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_t_0")
 blackgill_CV_L_plot <- surface_plot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_CV_L")
 
-save_image(blackgill_k_plot, "surface-plot.png")
-htmlwidgets::saveWidget(blackgill_k_plot, file = "image.html")
+htmlwidgets::saveWidget(blackgill_L_inf_plot, file = "blackgill_L_inf_plot.html")
+htmlwidgets::saveWidget(blackgill_k_plot, file = "blackgill_k_plot.html")
+htmlwidgets::saveWidget(blackgill_t_0_plot, file = "blackgill_t_0_plot.html")
+htmlwidgets::saveWidget(blackgill_CV_L_plot, file = "blackgill_CV_L_plot.html")
 
 
 
 # Create the 3D scatter plot
-plot_ly(data = subset(blackgill_results_df, sample_size == 1000), 
+plot_ly(data = subset(blackgill_results_df, sample_size == 500), 
         x = ~sel_1, 
         y = ~sel_2, 
         z = ~CV_Age,

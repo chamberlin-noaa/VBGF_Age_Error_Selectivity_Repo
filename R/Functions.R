@@ -76,7 +76,8 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
   vbgf_params_RE[3] <- (vbgf_params$vbto-t_0)/t_0
   vbgf_params_RE[4] <- (vbgf_params$vbcv-CV_L)/CV_L
   
-  return(list(vnt, mean_len_samp, obs_len, sampled_true_ages, obs_age, vbgf_params, vbgf_params_RE))
+  #return(list(vnt, mean_len_samp, obs_len, sampled_true_ages, obs_age, vbgf_params, vbgf_params_RE))
+  return(list(vbgf_params_RE))
 }
 
 
@@ -109,10 +110,10 @@ mean_vbgf_re <- function(results, n_iter) {
   vbgf_means <- matrix(nrow = length(results), ncol = 4)
   
   for (i in 1:length(results)) {
-    L_inf_values <- sapply(results[[i]], function(res) res[[7]][1])
-    k_values <- sapply(results[[i]], function(res) res[[7]][2])
-    t_0_values <- sapply(results[[i]], function(res) res[[7]][3])
-    CV_L_values <- sapply(results[[i]], function(res) res[[7]][4])
+    L_inf_values <- sapply(results[[i]], function(res) res[[1]][1]) #change to res[[7]][1] if reporting other metrics
+    k_values <- sapply(results[[i]], function(res) res[[1]][2])
+    t_0_values <- sapply(results[[i]], function(res) res[[1]][3])
+    CV_L_values <- sapply(results[[i]], function(res) res[[1]][4])
     
     vbgf_means[i,1] <- mean(L_inf_values)
     vbgf_means[i,2] <- mean(k_values)
