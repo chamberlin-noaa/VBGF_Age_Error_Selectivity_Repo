@@ -5,7 +5,7 @@ library(reshape2)
 surface_plot <- function(df, sample_size_n, subset_param, subset_param_value, x_param, y_param, z_param){
   plot_data <- subset(df, sample_size == as.numeric(sample_size_n))
   plot_data <- subset(plot_data, get(subset_param) == subset_param_value)
-  formula_str <- as.formula(paste0(x_param, "~", y_param, collapse = ""))
+  formula_str <- as.formula(paste0(x_param, "~", y_param, collapse = ""))#issue!!! Why isn't this being used?
   surface_data <- dcast(plot_data, sel_1 ~ CV_Age, value.var = z_param)
   z_matrix <- as.matrix(surface_data[, -1])
   
