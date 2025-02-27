@@ -1,28 +1,83 @@
+#To Do: 
+# ad code to save 2d plot
+#plot other spp
+#add red trace line to denot change from neg to pos
+#plot sample size =100 and =500
+
+
+library(ggplot2)
+library(patchwork)
 library(plotly)
 library(reshape2)
+
+setwd("C:/Users/Derek.Chamberlin/Work/Research/VBGF_Age_Error_Selectivity_Repo")
+
+#2-D Heatmap
+surface_plot_2d_ggplot <- function(df, sample_size_n, subset_param, subset_param_value, x_param, y_param, z_param){
+  plot_data <- subset(df, sample_size == as.numeric(sample_size_n))
+  plot_data <- subset(plot_data, get(subset_param) == subset_param_value)
+  
+  surface_data <- dcast(plot_data, sel_1 ~ CV_Age, value.var = z_param)
+  
+  long_data <- melt(surface_data, id.vars = "sel_1", variable.name = "CV_Age", value.name = "value")
+  
+  long_data$value <- as.numeric(long_data$value)
+  
+  ggplot(long_data, aes(x = sel_1, y = CV_Age, fill = value)) +
+    geom_tile() +
+    scale_fill_viridis_c(name = z_param) +#, limits = c(-0.5, 0.5), oob = scales::squish) +
+    labs(title = paste(z_param), x = x_param, y = y_param) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 0, hjust = 1, size = 12),
+      axis.text.y = element_text(angle = 0, size = 12),
+      plot.title = element_text(hjust = 0.5),   # Center the title
+      panel.grid = element_blank(),
+      axis.title.x = element_text(size = 14),   # Increase font size of x-axis label
+      axis.title.y = element_text(size = 14)
+    ) +
+    guides(fill = guide_colorbar(title = NULL))
+}
+
+# Usage for your specific case
+blackgill_L_inf_plot_2D <- surface_plot_2d_ggplot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_L_inf")
+blackgill_k_plot_2D <- surface_plot_2d_ggplot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_k")
+blackgill_t_0_plot_2D <- surface_plot_2d_ggplot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_t_0")
+blackgill_CV_L_plot_2D <- surface_plot_2d_ggplot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_CV_L")
+
+combined_plot <- (blackgill_L_inf_plot_2D | blackgill_k_plot_2D) / 
+  (blackgill_t_0_plot_2D | blackgill_CV_L_plot_2D)
+
+# Display the combined plot
+combined_plot
+
+
+
+
+
 
 #3-D Surface plots
 surface_plot <- function(df, sample_size_n, subset_param, subset_param_value, x_param, y_param, z_param){
   plot_data <- subset(df, sample_size == as.numeric(sample_size_n))
   plot_data <- subset(plot_data, get(subset_param) == subset_param_value)
   formula_str <- as.formula(paste0(x_param, "~", y_param, collapse = ""))#issue!!! Why isn't this being used?
-  surface_data <- dcast(plot_data, sel_1 ~ CV_Age, value.var = z_param)
+  surface_data <- dcast(plot_data, CV_Age ~ sel_1, value.var = z_param)
   z_matrix <- as.matrix(surface_data[, -1])
   
   # Create the surface plot
   plot_ly(
-    x = surface_data[[x_param]], 
-    y = colnames(z_matrix),  # CV_Age values as y axis labels
+    x = colnames(z_matrix), 
+    y = surface_data[[y_param]],  # CV_Age values as y axis labels
     z = z_matrix, 
     type = "surface", 
     colorscale = "Viridis", 
     showscale = TRUE
   ) %>%
     layout(scene = list(
-        xaxis = list(title = x_param),
-        yaxis = list(title = y_param),
-        zaxis = list(title = z_param)
-      )
+      xaxis = list(title = x_param),
+      yaxis = list(title = y_param),
+      zaxis = list(title = z_param)
+    )
     )
 }
 
