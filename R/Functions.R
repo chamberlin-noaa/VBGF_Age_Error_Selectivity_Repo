@@ -123,3 +123,20 @@ mean_vbgf_re <- function(results, n_iter) {
   
   return(vbgf_means)
 }
+
+flatten_results <- function(spp_results, spp_scenario){
+  flat <- matrix(nrow = length(calico_results)*n_iter, ncol = 15)
+  colnames(flat) <- c(
+    "L_inf_RE", "k_RE", "t_0_RE", "CV_L_RE",
+    "max_age", "M", "L_inf", "k", "t_0",
+    "CV_L", "sel_1", "sel_2", "sig_r",
+    "CV_Age", "sample_size"
+  )
+  for (i in 1:length(spp_results)) {
+    for (j in 1:n_iter) {
+      flat[((i-1)*100)+j,1:4] <- spp_results[[i]][[j]][[1]]
+      flat[((i-1)*100)+j,5:15] <- spp_scenario[i,]
+    }
+  }
+  return(flat)
+}

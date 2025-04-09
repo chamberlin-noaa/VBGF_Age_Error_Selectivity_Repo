@@ -16,10 +16,10 @@ source("Functions.R")
   L_inf <- 500
   t_0 <- 1
   CV_L <- 0.1
-  sel_1 <- seq(0, 400, 40) #all varied params must be same length for surface plot
+  sel_1 <- seq(0, 300, 30) #all varied params must be same length for surface plot
   sel_2 <- seq(10, 110, 10) #cope set to ~100
   sig_r <- 0.6
-  CV_Age <- seq(0, 0.2, 0.02)
+  CV_Age <- seq(0, 0.15, 0.015)
   sample_size <- c(100,500)
   
   #Create a data frames with all possible combinations
@@ -64,6 +64,7 @@ n_iter <- 100
 
 set.seed(51)
 blackgill_results <- apply(blackgill_scenario, 1, run_OM, n_iter = n_iter)
+blackgill_flat <- flatten_results(blackgill_results, blackgill_scenario)
 blackgill_mean_vbgf_re <- mean_vbgf_re(blackgill_results, n_iter)
 blackgill_results_df <- data.frame(
   max_age = blackgill_scenario[, 1],
@@ -86,6 +87,7 @@ blackgill_results_df <- data.frame(
 
 set.seed(51)
 blue_results <- apply(blue_scenario, 1, run_OM, n_iter = n_iter)
+blue_flat <- flatten_results(blue_results, blue_scenario)
 blue_mean_vbgf_re <- mean_vbgf_re(blue_results, n_iter)
 blue_results_df <- data.frame(
   max_age = blue_scenario[, 1],
@@ -108,6 +110,7 @@ blue_results_df <- data.frame(
 
 set.seed(51)
 olive_results <- apply(olive_scenario, 1, run_OM, n_iter = n_iter)
+olive_flat <- flatten_results(olive_results, olive_scenario)
 olive_mean_vbgf_re <- mean_vbgf_re(olive_results, n_iter)
 olive_results_df <- data.frame(
   max_age = olive_scenario[, 1],
@@ -130,6 +133,7 @@ olive_results_df <- data.frame(
 
 set.seed(51)
 calico_results <- apply(calico_scenario, 1, run_OM, n_iter = n_iter)
+calico_flat <- flatten_results(calico_results, calico_scenario)
 calico_mean_vbgf_re <- mean_vbgf_re(calico_results, n_iter)
 calico_results_df <- data.frame(
   max_age = calico_scenario[, 1],

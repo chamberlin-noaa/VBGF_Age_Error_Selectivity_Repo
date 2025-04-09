@@ -2,6 +2,7 @@
 # ad code to save 2d plot
 #plot other spp
 #add red trace line to denot change from neg to pos
+#or change code to standardize scales across panels
 #plot sample size =100 and =500
 
 
@@ -39,17 +40,44 @@ surface_plot_2d_ggplot <- function(df, sample_size_n, subset_param, subset_param
     guides(fill = guide_colorbar(title = NULL))
 }
 
-# Usage for your specific case
 blackgill_L_inf_plot_2D <- surface_plot_2d_ggplot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_L_inf")
 blackgill_k_plot_2D <- surface_plot_2d_ggplot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_k")
 blackgill_t_0_plot_2D <- surface_plot_2d_ggplot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_t_0")
 blackgill_CV_L_plot_2D <- surface_plot_2d_ggplot(blackgill_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_CV_L")
 
-combined_plot <- (blackgill_L_inf_plot_2D | blackgill_k_plot_2D) / 
+blackgill_combined_plot <- (blackgill_L_inf_plot_2D | blackgill_k_plot_2D) / 
   (blackgill_t_0_plot_2D | blackgill_CV_L_plot_2D)
+blackgill_combined_plot
 
-# Display the combined plot
-combined_plot
+
+blue_L_inf_plot_2D <- surface_plot_2d_ggplot(blue_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_L_inf")
+blue_k_plot_2D <- surface_plot_2d_ggplot(blue_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_k")
+blue_t_0_plot_2D <- surface_plot_2d_ggplot(blue_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_t_0")
+blue_CV_L_plot_2D <- surface_plot_2d_ggplot(blue_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_CV_L")
+
+blue_combined_plot <- (blue_L_inf_plot_2D | blue_k_plot_2D) / 
+  (blue_t_0_plot_2D | blue_CV_L_plot_2D)
+blue_combined_plot
+
+
+olive_L_inf_plot_2D <- surface_plot_2d_ggplot(olive_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_L_inf")
+olive_k_plot_2D <- surface_plot_2d_ggplot(olive_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_k")
+olive_t_0_plot_2D <- surface_plot_2d_ggplot(olive_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_t_0")
+olive_CV_L_plot_2D <- surface_plot_2d_ggplot(olive_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_CV_L")
+
+olive_combined_plot <- (olive_L_inf_plot_2D | olive_k_plot_2D) / 
+  (olive_t_0_plot_2D | olive_CV_L_plot_2D)
+olive_combined_plot
+
+
+calico_L_inf_plot_2D <- surface_plot_2d_ggplot(calico_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_L_inf")
+calico_k_plot_2D <- surface_plot_2d_ggplot(calico_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_k")
+calico_t_0_plot_2D <- surface_plot_2d_ggplot(calico_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_t_0")
+calico_CV_L_plot_2D <- surface_plot_2d_ggplot(calico_results_df, 500, "sel_2", 10, "sel_1", "CV_Age", "mean_re_CV_L")
+
+calico_combined_plot <- (calico_L_inf_plot_2D | calico_k_plot_2D) / 
+  (calico_t_0_plot_2D | calico_CV_L_plot_2D)
+calico_combined_plot
 
 
 
