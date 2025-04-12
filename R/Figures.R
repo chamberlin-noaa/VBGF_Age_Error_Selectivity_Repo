@@ -7,11 +7,74 @@
 
 
 library(ggplot2)
+library(tidyr)
 library(patchwork)
 library(plotly)
 library(reshape2)
 
 setwd("C:/Users/Derek.Chamberlin/Work/Research/VBGF_Age_Error_Selectivity_Repo")
+
+#Boxplot
+param_box_plot <- function(df, param){
+  base_plot <- ggplot(df, aes(x = as.factor(sel_1), y = {{ param }}, fill = as.factor(sel_2))) +
+    geom_boxplot() +
+    geom_hline(yintercept = 0, color = "red", linewidth = 0.8) +
+    facet_wrap(~ CV_Age, ncol = 5, labeller = as_labeller(function(value) paste("CV =", value))) +
+    scale_y_continuous(limits = c(-1.5, 1.5), breaks = seq(-1.5, 1.5, by = 0.25)) +
+    labs(fill = "sel_2") +
+    theme_minimal() +
+    theme(
+      strip.placement = "outside",
+      panel.spacing = unit(-1.75, "pt"),
+      panel.grid = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 2),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      strip.text = element_text(size = 10)
+    )
+  
+  return(base_plot)
+}
+
+blackgill_plot <- param_box_plot(subset(blackgill_flat, blackgill_flat$sample_size == 500 & blackgill_flat$sel_1 %in% c(80, 200, 320)), k_RE) + theme(legend.position = "none")
+blue_plot <- param_box_plot(subset(blue_flat, blue_flat$sample_size == 500 & blue_flat$sel_1 %in% c(80, 200, 320)), k_RE) + theme(legend.position = "none")
+calico_plot <- param_box_plot(subset(calico_flat, calico_flat$sample_size == 500 & calico_flat$sel_1 %in% c(80, 200, 320)), k_RE) + theme(legend.position = "none")
+olive_plot <- param_box_plot(subset(olive_flat, olive_flat$sample_size == 500 & olive_flat$sel_1 %in% c(80, 200, 320)), k_RE) + theme(legend.position = "right")
+
+# Create plots (3 w/o legend, 1 with legend)
+p1 <- base_plot + theme(legend.position = "none")
+p2 <- base_plot + theme(legend.position = "none")
+p3 <- base_plot + theme(legend.position = "none")
+p4 <- base_plot + theme(legend.position = "right")
+
+# Combine the 4 vertically, collect legend
+combined <- (blackgill_plot / blue_plot / olive_plot / calico_plot) + plot_layout(guides = "collect") & theme(legend.position = "right")
+
+# Convert to ggdraw so we can manually place text
+final_plot <- ggdraw() +
+  draw_plot(combined, x = 0.02, y = 0.02, width = 0.99, height = 0.99) +
+  draw_label("Selection 1 (sel_1)", x = 0.5, y = 0.01, vjust = 0, size = 16, fontface = "bold") +
+  draw_label("Relative error in K", x = 0.01, y = 0.5, angle = 90, vjust = 1, size = 16, fontface = "bold")
+
+# Show final plot
+final_plot
+
+ggsave("C:/Users/Derek.Chamberlin/Work/Research/VBGF_Age_Error_Selectivity_Repo/k_RE_boxplot.png", plot = final_plot, width = 8.5, height = 11, units = "in")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #2-D Heatmap
 surface_plot_2d_ggplot <- function(df, sample_size_n, subset_param, subset_param_value, x_param, y_param, z_param){

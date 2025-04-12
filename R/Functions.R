@@ -1,3 +1,6 @@
+logistic_selectivity_function <- function(mean_len, sel_1, sel_2) {
+  return(1 / (1 + exp(-sel_2 * (mean_len - sel_1))))
+}
 
 OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size){
   age<-1:max_age # age vector
@@ -8,7 +11,7 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
   lxo<-c(1,cumprod(surv)[1:(max_age-1)]) #survivorship
   lxo[max_age]=lxo[max_age]/(1-surv[max_age]) #accounting for the plus group
   
-  sel<-plogis(mean_len,sel_1,sel_2) # logistic selectivity 
+  sel<- logistic_selectivity_function(mean_len, sel_1, sel_2)# logistic selectivity #plogis(mean_len,sel_1,sel_2)
   sel<-sel/max(sel) #make sure the max selectivity is 1 
   
   perr<-rnorm((max_age),0,sig_r) #recruitment anomalies
@@ -77,7 +80,7 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
   vbgf_params_RE[4] <- (vbgf_params$vbcv-CV_L)/CV_L
   
   #return(list(vnt, mean_len_samp, obs_len, sampled_true_ages, obs_age, vbgf_params, vbgf_params_RE))
-  return(list(vbgf_params_RE))
+  return(list(vbgf_params_RE, vnt, mean_len_samp, obs_len, sampled_true_ages, obs_age, vbgf_params))
 }
 
 
@@ -125,7 +128,7 @@ mean_vbgf_re <- function(results, n_iter) {
 }
 
 flatten_results <- function(spp_results, spp_scenario){
-  flat <- matrix(nrow = length(calico_results)*n_iter, ncol = 15)
+  flat <- matrix(nrow = length(spp_results)*n_iter, ncol = 15)
   colnames(flat) <- c(
     "L_inf_RE", "k_RE", "t_0_RE", "CV_L_RE",
     "max_age", "M", "L_inf", "k", "t_0",
@@ -134,9 +137,9 @@ flatten_results <- function(spp_results, spp_scenario){
   )
   for (i in 1:length(spp_results)) {
     for (j in 1:n_iter) {
-      flat[((i-1)*100)+j,1:4] <- spp_results[[i]][[j]][[1]]
-      flat[((i-1)*100)+j,5:15] <- spp_scenario[i,]
+      flat[((i-1)*n_iter)+j,1:4] <- spp_results[[i]][[j]][[1]][1:4]
+      flat[((i-1)*n_iter)+j,5:15] <- spp_scenario[i,]
     }
   }
-  return(flat)
+  return(as.data.frame(flat))
 }

@@ -16,11 +16,11 @@ source("Functions.R")
   L_inf <- 500
   t_0 <- 1
   CV_L <- 0.1
-  sel_1 <- seq(0, 300, 30) #all varied params must be same length for surface plot
-  sel_2 <- seq(10, 110, 10) #cope set to ~100
+  sel_1 <- seq(0, 400, 40) #all varied params must be same length for surface plot
+  sel_2 <- seq(0.01, 1, .10) #seq(1, 101, 10) #cope set to ~100
   sig_r <- 0.6
-  CV_Age <- seq(0, 0.15, 0.015)
-  sample_size <- c(100,500)
+  CV_Age <- seq(0, 0.20, 0.02)
+  sample_size <- c(500,1000)
   
   #Create a data frames with all possible combinations
   #blackgill
@@ -62,7 +62,7 @@ source("Functions.R")
 
 n_iter <- 100
 
-set.seed(51)
+set.seed(9265)
 blackgill_results <- apply(blackgill_scenario, 1, run_OM, n_iter = n_iter)
 blackgill_flat <- flatten_results(blackgill_results, blackgill_scenario)
 blackgill_mean_vbgf_re <- mean_vbgf_re(blackgill_results, n_iter)
@@ -85,7 +85,7 @@ blackgill_results_df <- data.frame(
 )
 
 
-set.seed(51)
+set.seed(9265)
 blue_results <- apply(blue_scenario, 1, run_OM, n_iter = n_iter)
 blue_flat <- flatten_results(blue_results, blue_scenario)
 blue_mean_vbgf_re <- mean_vbgf_re(blue_results, n_iter)
@@ -108,7 +108,7 @@ blue_results_df <- data.frame(
 )
 
 
-set.seed(51)
+set.seed(9265)
 olive_results <- apply(olive_scenario, 1, run_OM, n_iter = n_iter)
 olive_flat <- flatten_results(olive_results, olive_scenario)
 olive_mean_vbgf_re <- mean_vbgf_re(olive_results, n_iter)
@@ -131,7 +131,7 @@ olive_results_df <- data.frame(
 )
 
 
-set.seed(51)
+set.seed(9265)
 calico_results <- apply(calico_scenario, 1, run_OM, n_iter = n_iter)
 calico_flat <- flatten_results(calico_results, calico_scenario)
 calico_mean_vbgf_re <- mean_vbgf_re(calico_results, n_iter)
@@ -153,6 +153,13 @@ calico_results_df <- data.frame(
   mean_re_CV_L = calico_mean_vbgf_re[, 4]
 )
 
+blackgill_flat$spp <- "blackgill"
+blue_flat$spp <- "blue"
+olive_flat$spp <- "olive"
+calico_flat$spp <- "calico"
+all_flat <- rbind(blackgill_flat, blue_flat, olive_flat, calico_flat)
+
+
 save.image("workspace.RData")
 
 
@@ -161,19 +168,22 @@ save.image("workspace.RData")
 
 
 #plot individual scenario/iteration
-plot(blackgill_results[[243]][[1]][[4]],blackgill_results[[243]][[1]][[2]], ylim = c(0,1000)) #sampled true age and mean length
-points(blackgill_results[[243]][[1]][[5]],blackgill_results[[243]][[1]][[2]], col = "red") #observed age and mean length
-points(blackgill_results[[243]][[1]][[5]],blackgill_results[[243]][[1]][[3]], col = "green") #observed age and observed length
-points(blackgill_results[[243]][[1]][[4]],blackgill_results[[243]][[1]][[3]], col = "blue") #sampled true age and observed length
+plot(blackgill_results[[243]][[1]][[5]],blackgill_results[[243]][[1]][[3]], ylim = c(0,1000)) #sampled true age and mean length
+points(blackgill_results[[243]][[1]][[6]],blackgill_results[[243]][[1]][[3]], col = "red") #observed age and mean length
+points(blackgill_results[[243]][[1]][[6]],blackgill_results[[243]][[1]][[4]], col = "green") #observed age and observed length
+points(blackgill_results[[243]][[1]][[5]],blackgill_results[[243]][[1]][[4]], col = "blue") #sampled true age and observed length
 
 
 #plot individual scenario/iteration
-plot(calico_results[[110]][[1]][[4]],calico_results[[110]][[1]][[2]], xlim = c(0,15), ylim = c(0,1000)) #sampled true age and mean length
-points(calico_results[[110]][[1]][[5]],calico_results[[110]][[1]][[2]], col = "red") #observed age and mean length
-points(calico_results[[110]][[1]][[5]],calico_results[[110]][[1]][[3]], col = "green") #observed age and observed length
-points(calico_results[[110]][[1]][[4]],calico_results[[110]][[1]][[3]], col = "blue") #sampled true age and observed length
+plot(calico_results[[130]][[1]][[5]],calico_results[[130]][[1]][[3]], xlim = c(0,15), ylim = c(0,1000)) #sampled true age and mean length
+points(calico_results[[130]][[1]][[6]],calico_results[[130]][[1]][[3]], col = "red") #observed age and mean length
+points(calico_results[[130]][[1]][[6]],calico_results[[130]][[1]][[4]], col = "green") #observed age and observed length
+points(calico_results[[130]][[1]][[5]],calico_results[[130]][[1]][[4]], col = "blue") #sampled true age and observed length
 
-
+plot(calico_results[[126]][[1]][[5]],calico_results[[126]][[1]][[3]], xlim = c(0,15), ylim = c(0,1000)) #sampled true age and mean length
+points(calico_results[[126]][[1]][[6]],calico_results[[126]][[1]][[3]], col = "red") #observed age and mean length
+points(calico_results[[126]][[1]][[6]],calico_results[[126]][[1]][[4]], col = "green") #observed age and observed length
+points(calico_results[[126]][[1]][[5]],calico_results[[126]][[1]][[4]], col = "blue") #sampled true age and observed length
 
 
 
@@ -185,7 +195,7 @@ k<-0.05 #von B growth coeeficient
 t_0<- 0.05 #theoretical age of 0 length could be - if L_inf(1-exp(-k*(t-t_0)))
 CV_L<-0.1 # variation in growth (comes in later)
 sel_1<-250#Selectivity is length based with sel50% at length 70
-sel_2<-25 #determines how steep the logistic curve is
+sel_2<-10 #determines how steep the logistic curve is
 sig_r<-0.6
 sample_size <- 500
 CV_Age = 0
