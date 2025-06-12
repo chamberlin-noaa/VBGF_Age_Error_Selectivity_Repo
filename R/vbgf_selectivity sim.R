@@ -1,8 +1,8 @@
-#To Do
-#cleanup code, cleanup comments
-#make sure selectivity is applied correctly
-#maybe make CV_L age related because young ages should have lower CV_L
-#should I add in age 0, cope didn't
+# To Do
+# cleanup code, cleanup comments
+# make sure selectivity is applied correctly
+# maybe make CV_L age related because young ages should have lower CV_L
+# should I add in age 0, cope didn't
 
 rm(list = ls())
 gc()
@@ -12,61 +12,67 @@ source("Functions.R")
 
 library(dplyr)
 library(tidyr)
+library(future.apply)
 
-#setup scenarios for each species
+# setup scenarios for each species
 {
-  #Shared life history params
+  # Shared life history params
   L_inf <- 500
   t_0 <- 1
   CV_L <- 0.1
-  sel_1 <- seq(0, 400, 100) #all varied params must be same length for surface plot
-  sel_2 <- seq(0.01, 1.01, .25) #seq(1, 101, 10) #cope set to ~100
+  sel_1 <- seq(0, 400, 100) # all varied params must be same length for surface plot
+  sel_2 <- seq(0.01, 1.01, .25) # seq(1, 101, 10) #cope set to ~100
   sig_r <- 0.6
   CV_Age <- seq(0, 0.20, 0.05)
-  sample_size <- c(500,1000)
-  
-  #Create a data frames with all possible combinations
-  #blackgill
+  sample_size <- c(500, 1000)
+
+  column_names <- c("max_age", "M", "L_inf", "k", "t_0", "CV_L", "sel_1", "sel_2", "sig_r", "CV_Age", "sample_size")
+
+  # Create a data frames with all possible combinations
+  # blackgill
   max_age <- 100
   M <- 0.075
   k <- 0.05
   combinations <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
   combinations_matrix <- as.matrix(combinations)
-  colnames(combinations_matrix) <- c("max_age", "M", "L_inf", "k", "t_0", "CV_L", "sel_1", "sel_2", "sig_r", "CV_Age", "sample_size")
+  colnames(combinations_matrix) <- column_names
   blackgill_scenario <- combinations_matrix
-  
-  #blue
+
+  # blue
   max_age <- 50
   M <- 0.15
   k <- 0.09
   combinations <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
   combinations_matrix <- as.matrix(combinations)
-  colnames(combinations_matrix) <- c("max_age", "M", "L_inf", "k", "t_0", "CV_L", "sel_1", "sel_2", "sig_r", "CV_Age", "sample_size")
+  colnames(combinations_matrix) <- column_names
   blue_scenario <- combinations_matrix
-  
-  #olive
+
+  # olive
   max_age <- 30
   M <- 0.25
   k <- 0.152
   combinations <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
   combinations_matrix <- as.matrix(combinations)
-  colnames(combinations_matrix) <- c("max_age", "M", "L_inf", "k", "t_0", "CV_L", "sel_1", "sel_2", "sig_r", "CV_Age", "sample_size")
+  colnames(combinations_matrix) <- column_names
   olive_scenario <- combinations_matrix
-  
-  #calico
+
+  # calico
   max_age <- 10
   M <- 0.5
   k <- 0.303
   combinations <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
   combinations_matrix <- as.matrix(combinations)
-  colnames(combinations_matrix) <- c("max_age", "M", "L_inf", "k", "t_0", "CV_L", "sel_1", "sel_2", "sig_r", "CV_Age", "sample_size")
+  colnames(combinations_matrix) <- column_names
   calico_scenario <- combinations_matrix
 }
 
-n_iter <- 100
+n_iter <- 10
+
+# Set up parallel processing (use all available cores)
+plan(multisession)
 
 set.seed(9265)
-blackgill_results <- apply(blackgill_scenario, 1, run_OM, n_iter = n_iter)
+blackgill_results <- future_apply(blackgill_scenario, 1, run_OM, n_iter = n_iter)
 blackgill_flat <- flatten_results(blackgill_results, blackgill_scenario)
 blackgill_mean_vbgf_re <- mean_vbgf_re(blackgill_results, n_iter)
 blackgill_results_df <- data.frame(
@@ -170,52 +176,52 @@ save.image("workspace.RData")
 
 
 
-#plot individual scenario/iteration
-plot(blackgill_results[[243]][[1]][[5]],blackgill_results[[243]][[1]][[3]], ylim = c(0,1000)) #sampled true age and mean length
-points(blackgill_results[[243]][[1]][[6]],blackgill_results[[243]][[1]][[3]], col = "red") #observed age and mean length
-points(blackgill_results[[243]][[1]][[6]],blackgill_results[[243]][[1]][[4]], col = "green") #observed age and observed length
-points(blackgill_results[[243]][[1]][[5]],blackgill_results[[243]][[1]][[4]], col = "blue") #sampled true age and observed length
+# plot individual scenario/iteration
+plot(blackgill_results[[243]][[1]][[5]], blackgill_results[[243]][[1]][[3]], ylim = c(0, 1000)) # sampled true age and mean length
+points(blackgill_results[[243]][[1]][[6]], blackgill_results[[243]][[1]][[3]], col = "red") # observed age and mean length
+points(blackgill_results[[243]][[1]][[6]], blackgill_results[[243]][[1]][[4]], col = "green") # observed age and observed length
+points(blackgill_results[[243]][[1]][[5]], blackgill_results[[243]][[1]][[4]], col = "blue") # sampled true age and observed length
 
 
-#plot individual scenario/iteration
-plot(calico_results[[130]][[1]][[5]],calico_results[[130]][[1]][[3]], xlim = c(0,15), ylim = c(0,1000)) #sampled true age and mean length
-points(calico_results[[130]][[1]][[6]],calico_results[[130]][[1]][[3]], col = "red") #observed age and mean length
-points(calico_results[[130]][[1]][[6]],calico_results[[130]][[1]][[4]], col = "green") #observed age and observed length
-points(calico_results[[130]][[1]][[5]],calico_results[[130]][[1]][[4]], col = "blue") #sampled true age and observed length
+# plot individual scenario/iteration
+plot(calico_results[[130]][[1]][[5]], calico_results[[130]][[1]][[3]], xlim = c(0, 15), ylim = c(0, 1000)) # sampled true age and mean length
+points(calico_results[[130]][[1]][[6]], calico_results[[130]][[1]][[3]], col = "red") # observed age and mean length
+points(calico_results[[130]][[1]][[6]], calico_results[[130]][[1]][[4]], col = "green") # observed age and observed length
+points(calico_results[[130]][[1]][[5]], calico_results[[130]][[1]][[4]], col = "blue") # sampled true age and observed length
 
-plot(calico_results[[126]][[1]][[5]],calico_results[[126]][[1]][[3]], xlim = c(0,15), ylim = c(0,1000)) #sampled true age and mean length
-points(calico_results[[126]][[1]][[6]],calico_results[[126]][[1]][[3]], col = "red") #observed age and mean length
-points(calico_results[[126]][[1]][[6]],calico_results[[126]][[1]][[4]], col = "green") #observed age and observed length
-points(calico_results[[126]][[1]][[5]],calico_results[[126]][[1]][[4]], col = "blue") #sampled true age and observed length
-
-
+plot(calico_results[[126]][[1]][[5]], calico_results[[126]][[1]][[3]], xlim = c(0, 15), ylim = c(0, 1000)) # sampled true age and mean length
+points(calico_results[[126]][[1]][[6]], calico_results[[126]][[1]][[3]], col = "red") # observed age and mean length
+points(calico_results[[126]][[1]][[6]], calico_results[[126]][[1]][[4]], col = "green") # observed age and observed length
+points(calico_results[[126]][[1]][[5]], calico_results[[126]][[1]][[4]], col = "blue") # sampled true age and observed length
 
 
-max_age<-100 #max age
-M<-0.075 # instantaneous natural mortality of adults 
-L_inf<-500 #asymtotic mean length
-k<-0.05 #von B growth coeeficient
-t_0<- 0.05 #theoretical age of 0 length could be - if L_inf(1-exp(-k*(t-t_0)))
-CV_L<-0.1 # variation in growth (comes in later)
-sel_1<-250#Selectivity is length based with sel50% at length 70
-sel_2<-10 #determines how steep the logistic curve is
-sig_r<-0.6
+
+
+max_age <- 100 # max age
+M <- 0.075 # instantaneous natural mortality of adults
+L_inf <- 500 # asymtotic mean length
+k <- 0.05 # von B growth coeeficient
+t_0 <- 0.05 # theoretical age of 0 length could be - if L_inf(1-exp(-k*(t-t_0)))
+CV_L <- 0.1 # variation in growth (comes in later)
+sel_1 <- 250 # Selectivity is length based with sel50% at length 70
+sel_2 <- 10 # determines how steep the logistic curve is
+sig_r <- 0.6
 sample_size <- 500
-CV_Age = 0
+CV_Age <- 0
 
-seed<-235
+seed <- 235
 set.seed(seed)
 
 results <- OM(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
 
 plot(results[[1]])
 
-plot(results[[4]],results[[2]], ylim = c(0,1000)) #sampled true age and mean length
-points(results[[4]],results[[3]], col = "red") #add in observed length
+plot(results[[4]], results[[2]], ylim = c(0, 1000)) # sampled true age and mean length
+points(results[[4]], results[[3]], col = "red") # add in observed length
 
 plot(results[[4]], results[[5]])
 
-plot(results[[4]],results[[2]], ylim = c(0,1000)) #sampled true age and mean length
-points(results[[5]],results[[2]], col = "red") #observed age and mean length
-points(results[[5]],results[[3]], col = "green") #observed age and observed length
-points(results[[4]],results[[3]], col = "blue") #sampled true age and observed length
+plot(results[[4]], results[[2]], ylim = c(0, 1000)) # sampled true age and mean length
+points(results[[5]], results[[2]], col = "red") # observed age and mean length
+points(results[[5]], results[[3]], col = "green") # observed age and observed length
+points(results[[4]], results[[3]], col = "blue") # sampled true age and observed length
