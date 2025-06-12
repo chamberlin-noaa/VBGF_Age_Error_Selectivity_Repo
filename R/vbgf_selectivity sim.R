@@ -10,16 +10,19 @@ gc()
 setwd("C:/Users/Derek.Chamberlin/Work/Research/VBGF_Age_Error_Selectivity_Repo/R")
 source("Functions.R")
 
+library(dplyr)
+library(tidyr)
+
 #setup scenarios for each species
 {
   #Shared life history params
   L_inf <- 500
   t_0 <- 1
   CV_L <- 0.1
-  sel_1 <- seq(0, 400, 40) #all varied params must be same length for surface plot
-  sel_2 <- seq(0.01, 1, .10) #seq(1, 101, 10) #cope set to ~100
+  sel_1 <- seq(0, 400, 100) #all varied params must be same length for surface plot
+  sel_2 <- seq(0.01, 1.01, .25) #seq(1, 101, 10) #cope set to ~100
   sig_r <- 0.6
-  CV_Age <- seq(0, 0.20, 0.02)
+  CV_Age <- seq(0, 0.20, 0.05)
   sample_size <- c(500,1000)
   
   #Create a data frames with all possible combinations

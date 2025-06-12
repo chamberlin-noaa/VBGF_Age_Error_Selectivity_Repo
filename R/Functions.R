@@ -11,19 +11,61 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
   lxo<-c(1,cumprod(surv)[1:(max_age-1)]) #survivorship
   lxo[max_age]=lxo[max_age]/(1-surv[max_age]) #accounting for the plus group
   
-  sel<- logistic_selectivity_function(mean_len, sel_1, sel_2)# logistic selectivity #plogis(mean_len,sel_1,sel_2)
-  sel<-sel/max(sel) #make sure the max selectivity is 1 
+  sel<- logistic_selectivity_function(1:1000, sel_1, sel_2)# logistic selectivity #plogis(mean_len,sel_1,sel_2)
+  sel<- sel/max(sel) #make sure the max selectivity is 1 
   
   perr<-rnorm((max_age),0,sig_r) #recruitment anomalies
   
-  nt<-lxo*exp(perr[1:max_age]-0.5*sig_r*sig_r) #umbers at age accounting for mortality and process variation
-  vnt<-nt*sel #vulnerable numbers accounting for selectivity
+  nt<-lxo*exp(perr[1:max_age]-0.5*sig_r*sig_r) #numbers at age accounting for mortality and process variation
   
-  sampled_true_ages <- sample(age, size = sample_size, replace = TRUE, prob = vnt) #true age individuals sampled from vulnerable population
+  #old sampling design that introduced CV_L after sel
+  {
+  #vnt<-nt*sel #vulnerable numbers accounting for selectivity
+  #vnt_probs <- vnt/sum(vnt) #make sure vulnerable probability sums to 1
   
-  mean_len_samp<-L_inf*(1-exp(-k*(sampled_true_ages+t_0))) #mean length of sampled individuals
+  #sampled_true_ages <- sample(age, size = sample_size, replace = TRUE, prob = vnt_probs) #true age individuals sampled from vulnerable population
   
-  obs_len <- mean_len_samp + rnorm(mean_len_samp,0,mean_len_samp*CV_L) #observed length adding in growth process error
+  #mean_len_samp<-L_inf*(1-exp(-k*(sampled_true_ages+t_0))) #mean length of sampled individuals
+  
+  #obs_len <- mean_len_samp + rnorm(mean_len_samp,0,mean_len_samp*CV_L) #observed length adding in growth process error
+  }
+    
+  #updated sampling design to avoid introducing CV_L after selectivity
+  {
+  nt_prob <- nt/sum(nt) #proportion at age
+  pop_ages <- sample(age, size = 1000000, replace = TRUE, prob = nt_prob) #sample from those proportions
+  pop_len_mean <- L_inf*(1-exp(-k*(pop_ages+t_0))) #calculate mean length for each individual
+  pop_len_obs <- round(pop_len_mean + rnorm(pop_len_mean,0,pop_len_mean*CV_L)) #add in growth variability
+  
+  fake_fish <- data.frame(
+    length = pop_len_obs,
+    age = pop_ages
+  )
+  
+  # count number of individuals for each length and age combo
+  len_age_matrix <- fake_fish %>%
+    filter(length >= 1, length <= 1000) %>%
+    count(length, age) %>%
+    complete(length = 1:1000, age = 1:max_age, fill = list(n = 0)) %>%
+    pivot_wider(names_from = age, values_from = n) %>%
+    arrange(length)
+  
+  len_age_matrix <- as.matrix(len_age_matrix[,-1])
+  
+  #apply selectivity
+  len_age_sel <- (len_age_matrix * sel)/sum(len_age_matrix * sel)
+  
+  #calculate join length, age probability
+  joint_probs_df <- expand.grid(
+    length = 1:1000,
+    age = age
+  ) %>%
+    mutate(prob = as.vector(len_age_sel))
+  
+  #sample from join probability
+  sampled_fish <- joint_probs_df %>%
+    slice_sample(n = 1000, weight_by = prob, replace = TRUE)
+  }
   
   AE_mat<-diag(max_age)
   
@@ -40,13 +82,18 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
     }
   }
   
-  obs_age <- vector(length = length(sampled_true_ages))
+  obs_age <- vector(length = length(sampled_fish$age))
   
   #adding ageing error to true ages
-  for (i in 1:length(sampled_true_ages)) {
-    obs_age[i]<- sample(age, size = 1, prob = AE_mat[sampled_true_ages[i],])
+  for (i in 1:length(sampled_fish$age)) {
+    obs_age[i]<- sample(age, size = 1, prob = AE_mat[sampled_fish$age[i],])
   }
   
+  
+  
+  
+
+
   
   #add VBGF calcs here
   nll <- function(theta){
@@ -55,7 +102,7 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
     vbto <- exp(theta[3])
     vbcv <- exp(theta[4])
     plengths <- vblinf*(1-exp(-vbk*(obs_age+vbto)))
-    nll <- -sum(dnorm(obs_len,plengths,vbcv*plengths,log=TRUE))
+    nll <- -sum(dnorm(sampled_fish$length,plengths,vbcv*plengths,log=TRUE))
     return(nll)
   }
   theta <- c(log(L_inf),log(k),log(0.5),log(CV_L))
@@ -68,8 +115,8 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
     vbto <- exp(theta[3])
     vbcv <- exp(theta[4])
     plengths <- vblinf*(1-exp(-vbk*(obs_age+vbto)))
-    nll <- -sum(dnorm(obs_len,plengths,vbcv*plengths,log=TRUE))
-    return(list(vblinf=vblinf,vbk=vbk,vbto=vbto,vbcv=vbcv,obs_age=obs_age,obs_len=obs_len,plengths=plengths))
+    nll <- -sum(dnorm(sampled_fish$length,plengths,vbcv*plengths,log=TRUE))
+    return(list(vblinf=vblinf,vbk=vbk,vbto=vbto,vbcv=vbcv,obs_age=obs_age,obs_len=sampled_fish$length,plengths=plengths))
   }
   vbgf_params <- report(fit$par)
   
@@ -80,7 +127,7 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
   vbgf_params_RE[4] <- (vbgf_params$vbcv-CV_L)/CV_L
   
   #return(list(vnt, mean_len_samp, obs_len, sampled_true_ages, obs_age, vbgf_params, vbgf_params_RE))
-  return(list(vbgf_params_RE, vnt, mean_len_samp, obs_len, sampled_true_ages, obs_age, vbgf_params))
+  return(list(vbgf_params_RE, sampled_fish$age, sampled_fish$length, obs_age, vbgf_params))
 }
 
 

@@ -11,8 +11,39 @@ library(tidyr)
 library(patchwork)
 library(plotly)
 library(reshape2)
+library(cowplot)
 
 setwd("C:/Users/Derek.Chamberlin/Work/Research/VBGF_Age_Error_Selectivity_Repo")
+
+#quick figure
+plot(blackgill_results[[6]][[1]][[2]],blackgill_results[[6]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[6]][[1]][[4]],blackgill_results[[6]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[6]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[6]][[1]][[5]][2]$vbk * (x + blackgill_results[[6]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
+
+
+
+
+
+plot(blackgill_results[[116]][[1]][[2]],blackgill_results[[116]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[116]][[1]][[4]],blackgill_results[[116]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[116]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[116]][[1]][[5]][2]$vbk * (x + blackgill_results[[116]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
+
+plot(blackgill_results[[117]][[1]][[2]],blackgill_results[[117]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[117]][[1]][[4]],blackgill_results[[117]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[117]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[117]][[1]][[5]][2]$vbk * (x + blackgill_results[[117]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
+
+plot(blackgill_results[[118]][[1]][[2]],blackgill_results[[118]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[118]][[1]][[4]],blackgill_results[[118]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[118]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[118]][[1]][[5]][2]$vbk * (x + blackgill_results[[118]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
+
+plot(blackgill_results[[119]][[1]][[2]],blackgill_results[[119]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[119]][[1]][[4]],blackgill_results[[119]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[119]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[119]][[1]][[5]][2]$vbk * (x + blackgill_results[[119]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
+
+
+
+
+
 
 #Boxplot
 param_box_plot <- function(df, param){
@@ -38,16 +69,16 @@ param_box_plot <- function(df, param){
   return(base_plot)
 }
 
-blackgill_plot <- param_box_plot(subset(blackgill_flat, blackgill_flat$sample_size == 500 & blackgill_flat$sel_1 %in% c(80, 200, 320)), k_RE) + theme(legend.position = "none")
-blue_plot <- param_box_plot(subset(blue_flat, blue_flat$sample_size == 500 & blue_flat$sel_1 %in% c(80, 200, 320)), k_RE) + theme(legend.position = "none")
-calico_plot <- param_box_plot(subset(calico_flat, calico_flat$sample_size == 500 & calico_flat$sel_1 %in% c(80, 200, 320)), k_RE) + theme(legend.position = "none")
-olive_plot <- param_box_plot(subset(olive_flat, olive_flat$sample_size == 500 & olive_flat$sel_1 %in% c(80, 200, 320)), k_RE) + theme(legend.position = "right")
+blackgill_plot <- param_box_plot(subset(blackgill_flat, blackgill_flat$sample_size == 500 & blackgill_flat$sel_1 %in% c(0, 200, 400)), k_RE) + theme(legend.position = "none")
+blue_plot <- param_box_plot(subset(blue_flat, blue_flat$sample_size == 500 & blue_flat$sel_1 %in% c(0, 200, 400)), k_RE) + theme(legend.position = "none")
+calico_plot <- param_box_plot(subset(calico_flat, calico_flat$sample_size == 500 & calico_flat$sel_1 %in% c(0, 200, 400)), k_RE) + theme(legend.position = "none")
+olive_plot <- param_box_plot(subset(olive_flat, olive_flat$sample_size == 500 & olive_flat$sel_1 %in% c(0, 200, 400)), k_RE) + theme(legend.position = "right")
 
 # Create plots (3 w/o legend, 1 with legend)
-p1 <- base_plot + theme(legend.position = "none")
-p2 <- base_plot + theme(legend.position = "none")
-p3 <- base_plot + theme(legend.position = "none")
-p4 <- base_plot + theme(legend.position = "right")
+p1 <- blackgill_plot + theme(legend.position = "none")
+p2 <- blue_plot + theme(legend.position = "none")
+p3 <- calico_plot + theme(legend.position = "none")
+p4 <- olive_plot + theme(legend.position = "right")
 
 # Combine the 4 vertically, collect legend
 combined <- (blackgill_plot / blue_plot / olive_plot / calico_plot) + plot_layout(guides = "collect") & theme(legend.position = "right")
