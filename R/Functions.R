@@ -64,7 +64,7 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
   
   #sample from join probability
   sampled_fish <- joint_probs_df %>%
-    slice_sample(n = 1000, weight_by = prob, replace = TRUE)
+    slice_sample(n = sample_size, weight_by = prob, replace = TRUE)
   }
   
   AE_mat<-diag(max_age)

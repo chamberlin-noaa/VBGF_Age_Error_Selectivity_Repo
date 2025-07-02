@@ -66,7 +66,7 @@ library(future.apply)
   calico_scenario <- combinations_matrix
 }
 
-n_iter <- 10
+n_iter <- 100
 
 # Set up parallel processing (use all available cores)
 plan(multisession)

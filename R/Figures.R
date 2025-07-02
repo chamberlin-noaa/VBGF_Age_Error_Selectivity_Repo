@@ -1,5 +1,5 @@
 #To Do: 
-# ad code to save 2d plot
+#add code to save 2d plot
 #plot other spp
 #add red trace line to denot change from neg to pos
 #or change code to standardize scales across panels
@@ -15,43 +15,13 @@ library(cowplot)
 
 setwd("C:/Users/Derek.Chamberlin/Work/Research/VBGF_Age_Error_Selectivity_Repo")
 
-#quick figure
-plot(blackgill_results[[6]][[1]][[2]],blackgill_results[[6]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
-points(blackgill_results[[6]][[1]][[4]],blackgill_results[[6]][[1]][[3]], col = "red") #observed age and observed length
-curve(blackgill_results[[6]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[6]][[1]][[5]][2]$vbk * (x + blackgill_results[[6]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
-
-
-
-
-
-plot(blackgill_results[[116]][[1]][[2]],blackgill_results[[116]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
-points(blackgill_results[[116]][[1]][[4]],blackgill_results[[116]][[1]][[3]], col = "red") #observed age and observed length
-curve(blackgill_results[[116]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[116]][[1]][[5]][2]$vbk * (x + blackgill_results[[116]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
-
-plot(blackgill_results[[117]][[1]][[2]],blackgill_results[[117]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
-points(blackgill_results[[117]][[1]][[4]],blackgill_results[[117]][[1]][[3]], col = "red") #observed age and observed length
-curve(blackgill_results[[117]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[117]][[1]][[5]][2]$vbk * (x + blackgill_results[[117]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
-
-plot(blackgill_results[[118]][[1]][[2]],blackgill_results[[118]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
-points(blackgill_results[[118]][[1]][[4]],blackgill_results[[118]][[1]][[3]], col = "red") #observed age and observed length
-curve(blackgill_results[[118]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[118]][[1]][[5]][2]$vbk * (x + blackgill_results[[118]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
-
-plot(blackgill_results[[119]][[1]][[2]],blackgill_results[[119]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
-points(blackgill_results[[119]][[1]][[4]],blackgill_results[[119]][[1]][[3]], col = "red") #observed age and observed length
-curve(blackgill_results[[119]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[119]][[1]][[5]][2]$vbk * (x + blackgill_results[[119]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
-
-
-
-
-
-
 #Boxplot
-param_box_plot <- function(df, param){
+param_box_plot <- function(df, param, y_range, y_range_break){
   base_plot <- ggplot(df, aes(x = as.factor(sel_1), y = {{ param }}, fill = as.factor(sel_2))) +
     geom_boxplot() +
     geom_hline(yintercept = 0, color = "red", linewidth = 0.8) +
     facet_wrap(~ CV_Age, ncol = 5, labeller = as_labeller(function(value) paste("CV =", value))) +
-    scale_y_continuous(limits = c(-1.5, 1.5), breaks = seq(-1.5, 1.5, by = 0.25)) +
+    scale_y_continuous(limits = c(-y_range, y_range), breaks = seq(-y_range, y_range, by = y_range_break)) +
     labs(fill = "sel_2") +
     theme_minimal() +
     theme(
@@ -69,41 +39,63 @@ param_box_plot <- function(df, param){
   return(base_plot)
 }
 
-blackgill_plot <- param_box_plot(subset(blackgill_flat, blackgill_flat$sample_size == 500 & blackgill_flat$sel_1 %in% c(0, 200, 400)), k_RE) + theme(legend.position = "none")
-blue_plot <- param_box_plot(subset(blue_flat, blue_flat$sample_size == 500 & blue_flat$sel_1 %in% c(0, 200, 400)), k_RE) + theme(legend.position = "none")
-calico_plot <- param_box_plot(subset(calico_flat, calico_flat$sample_size == 500 & calico_flat$sel_1 %in% c(0, 200, 400)), k_RE) + theme(legend.position = "none")
-olive_plot <- param_box_plot(subset(olive_flat, olive_flat$sample_size == 500 & olive_flat$sel_1 %in% c(0, 200, 400)), k_RE) + theme(legend.position = "right")
+create_comparison_plot <- function(param, y_axis_label, sample_size, sel_1_sub, y_range, y_range_break) {
+  param_symbol <- rlang::sym(param)
+  
+  blackgill_data <- subset(blackgill_flat, sample_size == sample_size & sel_1 %in% sel_1_sub)
+  blue_data <- subset(blue_flat, sample_size == sample_size & sel_1 %in% sel_1_sub)
+  calico_data <- subset(calico_flat, sample_size == sample_size & sel_1 %in% sel_1_sub)
+  olive_data <- subset(olive_flat, sample_size == sample_size & sel_1 %in% sel_1_sub)
+  
+  p1 <- param_box_plot(blackgill_data, !!param_symbol, y_range, y_range_break)
+  p2 <- param_box_plot(blue_data, !!param_symbol, y_range, y_range_break)
+  p3 <- param_box_plot(calico_data, !!param_symbol, y_range, y_range_break)
+  p4 <- param_box_plot(olive_data, !!param_symbol, y_range, y_range_break)
+  
+  combined <- (p1 / p2 / p3 / p4) + plot_layout(guides = "collect") & theme(legend.position = "right")
+  
+  final_plot <- ggdraw() +
+    draw_plot(combined, x = 0.02, y = 0.02, width = 0.99, height = 0.99) +
+    draw_label("sel_1", x = 0.5, y = 0.01, vjust = 0, size = 16, fontface = "bold") +
+    draw_label(y_axis_label, x = 0.01, y = 0.5, angle = 90, vjust = 1, size = 16, fontface = "bold")
+  
+  return(final_plot)
+}
 
-# Create plots (3 w/o legend, 1 with legend)
-p1 <- blackgill_plot + theme(legend.position = "none")
-p2 <- blue_plot + theme(legend.position = "none")
-p3 <- calico_plot + theme(legend.position = "none")
-p4 <- olive_plot + theme(legend.position = "right")
+k_re_plot <- create_comparison_plot("k_RE", "Relative error in K", 500, c(0, 200, 400), 1.5, 0.25)
+k_re_plot
+# ggsave("k_RE_boxplot.png", plot = k_re_plot, width = 8.5, height = 11, units = "in")
 
-# Combine the 4 vertically, collect legend
-combined <- (blackgill_plot / blue_plot / olive_plot / calico_plot) + plot_layout(guides = "collect") & theme(legend.position = "right")
+L_inf_re_plot <- create_comparison_plot("L_inf_RE", "Relative error in L-infinity", 500, c(0, 200, 400), 1, 0.25)
+L_inf_re_plot
+# ggsave("L_inf_RE_boxplot.png", plot = L_inf_re_plot, width = 8.5, height = 11, units = "in")
 
-# Convert to ggdraw so we can manually place text
-final_plot <- ggdraw() +
-  draw_plot(combined, x = 0.02, y = 0.02, width = 0.99, height = 0.99) +
-  draw_label("Selection 1 (sel_1)", x = 0.5, y = 0.01, vjust = 0, size = 16, fontface = "bold") +
-  draw_label("Relative error in K", x = 0.01, y = 0.5, angle = 90, vjust = 1, size = 16, fontface = "bold")
-
-# Show final plot
-final_plot
-
-ggsave("C:/Users/Derek.Chamberlin/Work/Research/VBGF_Age_Error_Selectivity_Repo/k_RE_boxplot.png", plot = final_plot, width = 8.5, height = 11, units = "in")
+t_0_re_plot <- create_comparison_plot("t_0_RE", "Relative error in t-zero", 500, c(0, 200, 400), 200, 50)
+t_0_re_plot
+# ggsave("t_0_RE_boxplot.png", plot = t_0_re_plot, width = 8.5, height = 11, units = "in")
 
 
 
+#quick figures
+plot(blackgill_results[[6]][[1]][[2]],blackgill_results[[6]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[6]][[1]][[4]],blackgill_results[[6]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[6]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[6]][[1]][[5]][2]$vbk * (x + blackgill_results[[6]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
 
+plot(blackgill_results[[116]][[1]][[2]],blackgill_results[[116]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[116]][[1]][[4]],blackgill_results[[116]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[116]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[116]][[1]][[5]][2]$vbk * (x + blackgill_results[[116]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
 
+plot(blackgill_results[[117]][[1]][[2]],blackgill_results[[117]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[117]][[1]][[4]],blackgill_results[[117]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[117]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[117]][[1]][[5]][2]$vbk * (x + blackgill_results[[117]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
 
+plot(blackgill_results[[118]][[1]][[2]],blackgill_results[[118]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[118]][[1]][[4]],blackgill_results[[118]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[118]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[118]][[1]][[5]][2]$vbk * (x + blackgill_results[[118]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
 
-
-
-
-
+plot(blackgill_results[[119]][[1]][[2]],blackgill_results[[119]][[1]][[3]], xlim = c(0,100), ylim = c(0,1000)) #sampled true age and observed length
+points(blackgill_results[[119]][[1]][[4]],blackgill_results[[119]][[1]][[3]], col = "red") #observed age and observed length
+curve(blackgill_results[[119]][[1]][[5]][1]$vblinf * (1 - exp(-blackgill_results[[119]][[1]][[5]][2]$vbk * (x + blackgill_results[[119]][[1]][[5]][3]$vbto))), add = TRUE, col = "blue", lwd = 2)
 
 
 
@@ -172,9 +164,6 @@ calico_CV_L_plot_2D <- surface_plot_2d_ggplot(calico_results_df, 500, "sel_2", 1
 calico_combined_plot <- (calico_L_inf_plot_2D | calico_k_plot_2D) / 
   (calico_t_0_plot_2D | calico_CV_L_plot_2D)
 calico_combined_plot
-
-
-
 
 
 
