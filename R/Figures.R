@@ -82,7 +82,7 @@ ggsave("t_0_RE_boxplot.png", plot = t_0_re_plot, width = 8.5, height = 11, units
     "B1=200, B2=-2, B3=10, B4=11" = c(B1=200, B2=-2, B3=10, B4=11),
     "B1=200, B2=-4, B3=8, B4=9" = c(B1=200, B2=-4, B3=8, B4=9),
     "B1=200, B2=0, B3=12, B4=13" = c(B1=200, B2=0, B3=12, B4=13),
-    "B1=100, B2=-2, B3=10, B4=11" = c(B1=100, B2=-2, B3=10, B4=11),
+    "B1=300, B2=-2, B3=10, B4=11" = c(B1=300, B2=-2, B3=10, B4=11),
     "B1=100, B2=-2, B3=10, B4=11" = c(B1=100, B2=-2, B3=10, B4=11)
   )
   
@@ -137,7 +137,7 @@ ggsave("t_0_RE_boxplot.png", plot = t_0_re_plot, width = 8.5, height = 11, units
       axis.title.x = element_blank(),
       axis.title.y = element_blank(),
     ) +
-    annotate("text", x=20, y=1.02, label= "A", size = 6, fontface = "bold")
+    annotate("text", x=20, y=1.02, label= "A", size = 5.5, fontface = "bold")
   
   # Create the first plot (p1) with ggplot
   p2 <- ggplot(df_dome, aes(x = size, y = selectivity, color = combination)) +
@@ -163,7 +163,7 @@ ggsave("t_0_RE_boxplot.png", plot = t_0_re_plot, width = 8.5, height = 11, units
       axis.title.x = element_blank(),
       axis.title.y = element_blank(),
     ) +
-    annotate("text", x=20, y=1.02, label= "B", size = 6, fontface = "bold")
+    annotate("text", x=20, y=1.02, label= "B", size = 5.5, fontface = "bold")
   
   # Combine the plots using patchwork
   final_plot <- p1 / p2
