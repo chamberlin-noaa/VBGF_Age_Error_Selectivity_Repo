@@ -14,6 +14,7 @@ library(reshape2)
 library(cowplot)
 
 setwd("C:/Users/Derek.Chamberlin/Work/Research/VBGF_Age_Error_Selectivity_Repo")
+source("./R/Functions.R")
 
 #Boxplot
 param_box_plot <- function(df, param, y_range, y_range_break){
@@ -64,16 +65,120 @@ create_comparison_plot <- function(param, y_axis_label, sample_size, sel_1_sub, 
 
 k_re_plot <- create_comparison_plot("k_RE", "Relative error in K", 500, c(0, 200, 400), 1.5, 0.25)
 k_re_plot
-# ggsave("k_RE_boxplot.png", plot = k_re_plot, width = 8.5, height = 11, units = "in")
+ggsave("k_RE_boxplot.png", plot = k_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
 
 L_inf_re_plot <- create_comparison_plot("L_inf_RE", "Relative error in L-infinity", 500, c(0, 200, 400), 1, 0.25)
 L_inf_re_plot
-# ggsave("L_inf_RE_boxplot.png", plot = L_inf_re_plot, width = 8.5, height = 11, units = "in")
+ggsave("L_inf_RE_boxplot.png", plot = L_inf_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
 
 t_0_re_plot <- create_comparison_plot("t_0_RE", "Relative error in t-zero", 500, c(0, 200, 400), 200, 50)
 t_0_re_plot
-# ggsave("t_0_RE_boxplot.png", plot = t_0_re_plot, width = 8.5, height = 11, units = "in")
+ggsave("t_0_RE_boxplot.png", plot = t_0_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
 
+#Selectivity Figure
+{
+  size <- 1:750
+  param_combinations_dome <- list(
+    "B1=200, B2=-2, B3=10, B4=11" = c(B1=200, B2=-2, B3=10, B4=11),
+    "B1=200, B2=-4, B3=8, B4=9" = c(B1=200, B2=-4, B3=8, B4=9),
+    "B1=200, B2=0, B3=12, B4=13" = c(B1=200, B2=0, B3=12, B4=13),
+    "B1=100, B2=-2, B3=10, B4=11" = c(B1=100, B2=-2, B3=10, B4=11),
+    "B1=100, B2=-2, B3=10, B4=11" = c(B1=100, B2=-2, B3=10, B4=11)
+  )
+  
+  param_combinations_logistic <- list(
+    "L50=200, Slope=0.11" = c(L50=200, slope=0.02),
+    "L50=200, Slope=0.035" = c(L50=200, slope=0.05),
+    "L50=200, Slope=0.185" = c(L50=200, slope=0.01),
+    "L50=300, Slope=0.11" = c(L50=300, slope=0.02),
+    "L50=100, Slope=0.11" = c(L50=100, slope=0.02)
+  )
+  
+  # Create data frames for plotting with ggplot2
+  df_dome <- do.call(rbind, lapply(names(param_combinations_dome), function(name) {
+    params <- param_combinations_dome[[name]]
+    data.frame(
+      size = size,
+      selectivity = dome_selectivity_function(size, params["B1"], params["B2"], params["B3"], params["B4"]),
+      combination = name
+    )
+  }))
+  
+  df_logistic <- do.call(rbind, lapply(names(param_combinations_logistic), function(name) {
+    params <- param_combinations_logistic[[name]]
+    data.frame(
+      size = size,
+      selectivity = logistic_selectivity_function(size, params["L50"], params["slope"]),
+      combination = name
+    )
+  }))
+  
+  # Create the second plot (p2) with ggplot
+  p1 <- ggplot(df_logistic, aes(x = size, y = selectivity, color = combination)) +
+    geom_line(linewidth = 1) +
+    scale_x_continuous(
+      expand = c(0, 0), 
+      limits = c(0, max(size)), 
+      breaks = seq(0, 750, by = 100)
+    ) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 1.1)) +
+    labs(
+      x = "Size (mm)",
+      y = "Selectivity",
+      color = "Parameters"
+    ) +
+    theme_minimal() +
+    scale_color_viridis_d() +
+    theme(
+      panel.grid = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+      axis.text.x = element_text(size = 11),
+      axis.text.y = element_text(size = 11),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+    ) +
+    annotate("text", x=20, y=1.02, label= "A", size = 6, fontface = "bold")
+  
+  # Create the first plot (p1) with ggplot
+  p2 <- ggplot(df_dome, aes(x = size, y = selectivity, color = combination)) +
+    geom_line(linewidth = 1) +
+    scale_x_continuous(
+      expand = c(0, 0), 
+      limits = c(0, max(size)), 
+      breaks = seq(0, 750, by = 100)
+    ) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 1.1)) +
+    labs(
+      x = "Size (mm)",
+      y = "Selectivity",
+      color = "Parameters"
+    ) +
+    theme_minimal() +
+    scale_color_viridis_d() +
+    theme(
+      panel.grid = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+      axis.text.x = element_text(size = 11),
+      axis.text.y = element_text(size = 11),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+    ) +
+    annotate("text", x=20, y=1.02, label= "B", size = 6, fontface = "bold")
+  
+  # Combine the plots using patchwork
+  final_plot <- p1 / p2
+  
+
+  
+  final_plot <- ggdraw() +
+    draw_plot(final_plot, x = 0.02, y = 0.02, width = 0.99, height = 0.99) +
+    draw_label("Length (mm)", x = 0.5, y = 0.01, vjust = 0, size = 16, fontface = "bold") +
+    draw_label("Selectivity", x = 0.01, y = 0.5, angle = 90, vjust = 1, size = 16, fontface = "bold")
+  
+  final_plot
+  
+  ggsave("selectivity_plot.png", plot = final_plot, width = 6.5, height = 4, units = "in", bg = "white")
+}
 
 
 #quick figures

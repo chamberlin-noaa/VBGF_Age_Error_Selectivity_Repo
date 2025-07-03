@@ -20,50 +20,60 @@ library(future.apply)
   L_inf <- 500
   t_0 <- 1
   CV_L <- 0.1
-  sel_1 <- seq(0, 400, 100) # all varied params must be same length for surface plot
-  sel_2 <- seq(0.01, 1.01, .25) # seq(1, 101, 10) #cope set to ~100
+  shape <- "logistic"
+  sel_1 <- seq(0, 400, 50) # all varied params must be same length for surface plot
+  sel_2 <- seq(0.01, 0.21, 0.025) # seq(1, 101, 10) #cope set to ~100
+  B1 <- NA
+  B2 <- NA
+  B3 <- NA
+  B4 <- NA
   sig_r <- 0.6
   CV_Age <- seq(0, 0.20, 0.05)
   sample_size <- c(500, 1000)
 
-  column_names <- c("max_age", "M", "L_inf", "k", "t_0", "CV_L", "sel_1", "sel_2", "sig_r", "CV_Age", "sample_size")
+  column_names <- c("max_age", "M", "L_inf", "k", "t_0", "CV_L", "shape","sel_1", 
+                    "sel_2", "B1", "B2", "B3", "B4", "sig_r", "CV_Age", "sample_size")
 
   # Create a data frames with all possible combinations
   # blackgill
   max_age <- 100
   M <- 0.075
   k <- 0.05
-  combinations <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
-  combinations_matrix <- as.matrix(combinations)
-  colnames(combinations_matrix) <- column_names
-  blackgill_scenario <- combinations_matrix
+  combinations_logistic <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, 
+                                       sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
+  combinations_matrix_logistic <- as.matrix(combinations_logistic)
+  colnames(combinations_matrix_logistic) <- column_names
+  blackgill_scenario_logistic <- combinations_matrix_logistic
 
   # blue
   max_age <- 50
   M <- 0.15
   k <- 0.09
-  combinations <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
-  combinations_matrix <- as.matrix(combinations)
-  colnames(combinations_matrix) <- column_names
-  blue_scenario <- combinations_matrix
+  combinations_logistic <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, 
+                                       sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
+  combinations_matrix_logistic <- as.matrix(combinations_logistic)
+  colnames(combinations_matrix_logistic) <- column_names
+  blue_scenario_logistic <- combinations_matrix_logistic
 
   # olive
   max_age <- 30
   M <- 0.25
   k <- 0.152
-  combinations <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
-  combinations_matrix <- as.matrix(combinations)
-  colnames(combinations_matrix) <- column_names
-  olive_scenario <- combinations_matrix
+  combinations_logistic <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, 
+                                       sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
+  combinations_matrix_logistic <- as.matrix(combinations_logistic)
+  colnames(combinations_matrix_logistic) <- column_names
+  olive_scenario_logistic <- combinations_matrix_logistic
 
   # calico
   max_age <- 10
   M <- 0.5
   k <- 0.303
-  combinations <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
-  combinations_matrix <- as.matrix(combinations)
-  colnames(combinations_matrix) <- column_names
-  calico_scenario <- combinations_matrix
+  combinations_logistic <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, 
+                                       sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
+  combinations_matrix_logistic <- as.matrix(combinations_logistic)
+  colnames(combinations_matrix_logistic) <- column_names
+  calico_scenario_logistic <- combinations_matrix_logistic
 }
 
 n_iter <- 100
@@ -72,104 +82,270 @@ n_iter <- 100
 plan(multisession)
 
 set.seed(9265)
-blackgill_results <- future_apply(blackgill_scenario, 1, run_OM, n_iter = n_iter)
-blackgill_flat <- flatten_results(blackgill_results, blackgill_scenario)
-blackgill_mean_vbgf_re <- mean_vbgf_re(blackgill_results, n_iter)
-blackgill_results_df <- data.frame(
-  max_age = blackgill_scenario[, 1],
-  M = blackgill_scenario[, 2],
-  L_inf = blackgill_scenario[, 3],
-  k = blackgill_scenario[, 4],
-  t_0 = blackgill_scenario[, 5],
-  CV_L = blackgill_scenario[, 6],
-  sel_1 = blackgill_scenario[, 7],
-  sel_2 = blackgill_scenario[, 8],
-  sig_r = blackgill_scenario[, 9],
-  CV_Age = blackgill_scenario[, 10],
-  sample_size = blackgill_scenario[, 11],
-  mean_re_L_inf = blackgill_mean_vbgf_re[, 1],
-  mean_re_k = blackgill_mean_vbgf_re[, 2],
-  mean_re_t_0 = blackgill_mean_vbgf_re[, 3],
-  mean_re_CV_L = blackgill_mean_vbgf_re[, 4]
+blackgill_results_logistic <- future_apply(blackgill_scenario_logistic, 1, run_OM, n_iter = n_iter)
+blackgill_flat_logistic <- flatten_results(blackgill_results_logistic, blackgill_scenario_logistic)
+blackgill_mean_vbgf_re_logistic <- mean_vbgf_re(blackgill_results_logistic, n_iter)
+blackgill_results_df_logistic <- data.frame(
+  max_age = blackgill_scenario_logistic[, "max_age"],
+  M = blackgill_scenario_logistic[, "M"],
+  L_inf = blackgill_scenario_logistic[, "L_inf"],
+  k = blackgill_scenario_logistic[, "k"],
+  t_0 = blackgill_scenario_logistic[, "t_0"],
+  CV_L = blackgill_scenario_logistic[, "CV_L"],
+  sel_1 = blackgill_scenario_logistic[, "sel_1"],
+  sel_2 = blackgill_scenario_logistic[, "sel_2"],
+  sig_r = blackgill_scenario_logistic[, "sig_r"],
+  CV_Age = blackgill_scenario_logistic[, "CV_Age"],
+  sample_size = blackgill_scenario_logistic[, "sample_size"],
+  mean_re_L_inf = blackgill_mean_vbgf_re_logistic[, 1],
+  mean_re_k = blackgill_mean_vbgf_re_logistic[, 2],
+  mean_re_t_0 = blackgill_mean_vbgf_re_logistic[, 3],
+  mean_re_CV_L = blackgill_mean_vbgf_re_logistic[, 4]
 )
 
 
 set.seed(9265)
-blue_results <- apply(blue_scenario, 1, run_OM, n_iter = n_iter)
-blue_flat <- flatten_results(blue_results, blue_scenario)
-blue_mean_vbgf_re <- mean_vbgf_re(blue_results, n_iter)
-blue_results_df <- data.frame(
-  max_age = blue_scenario[, 1],
-  M = blue_scenario[, 2],
-  L_inf = blue_scenario[, 3],
-  k = blue_scenario[, 4],
-  t_0 = blue_scenario[, 5],
-  CV_L = blue_scenario[, 6],
-  sel_1 = blue_scenario[, 7],
-  sel_2 = blue_scenario[, 8],
-  sig_r = blue_scenario[, 9],
-  CV_Age = blue_scenario[, 10],
-  sample_size = blue_scenario[, 11],
-  mean_re_L_inf = blue_mean_vbgf_re[, 1],
-  mean_re_k = blue_mean_vbgf_re[, 2],
-  mean_re_t_0 = blue_mean_vbgf_re[, 3],
-  mean_re_CV_L = blue_mean_vbgf_re[, 4]
+blue_results_logistic <- future_apply(blue_scenario_logistic, 1, run_OM, n_iter = n_iter)
+blue_flat_logistic <- flatten_results(blue_results_logistic, blue_scenario_logistic)
+blue_mean_vbgf_re_logistic <- mean_vbgf_re(blue_results_logistic, n_iter)
+blue_results_df_logistic <- data.frame(
+  max_age = blue_scenario_logistic[, "max_age"],
+  M = blue_scenario_logistic[, "M"],
+  L_inf = blue_scenario_logistic[, "L_inf"],
+  k = blue_scenario_logistic[, "k"],
+  t_0 = blue_scenario_logistic[, "t_0"],
+  CV_L = blue_scenario_logistic[, "CV_L"],
+  sel_1 = blue_scenario_logistic[, "sel_1"],
+  sel_2 = blue_scenario_logistic[, "sel_2"],
+  sig_r = blue_scenario_logistic[, "sig_r"],
+  CV_Age = blue_scenario_logistic[, "CV_Age"],
+  sample_size = blue_scenario_logistic[, "sample_size"],
+  mean_re_L_inf = blue_mean_vbgf_re_logistic[, 1],
+  mean_re_k = blue_mean_vbgf_re_logistic[, 2],
+  mean_re_t_0 = blue_mean_vbgf_re_logistic[, 3],
+  mean_re_CV_L = blue_mean_vbgf_re_logistic[, 4]
 )
 
 
 set.seed(9265)
-olive_results <- apply(olive_scenario, 1, run_OM, n_iter = n_iter)
-olive_flat <- flatten_results(olive_results, olive_scenario)
-olive_mean_vbgf_re <- mean_vbgf_re(olive_results, n_iter)
-olive_results_df <- data.frame(
-  max_age = olive_scenario[, 1],
-  M = olive_scenario[, 2],
-  L_inf = olive_scenario[, 3],
-  k = olive_scenario[, 4],
-  t_0 = olive_scenario[, 5],
-  CV_L = olive_scenario[, 6],
-  sel_1 = olive_scenario[, 7],
-  sel_2 = olive_scenario[, 8],
-  sig_r = olive_scenario[, 9],
-  CV_Age = olive_scenario[, 10],
-  sample_size = olive_scenario[, 11],
-  mean_re_L_inf = olive_mean_vbgf_re[, 1],
-  mean_re_k = olive_mean_vbgf_re[, 2],
-  mean_re_t_0 = olive_mean_vbgf_re[, 3],
-  mean_re_CV_L = olive_mean_vbgf_re[, 4]
+olive_results_logistic <- future_apply(olive_scenario_logistic, 1, run_OM, n_iter = n_iter)
+olive_flat_logistic <- flatten_results(olive_results_logistic, olive_scenario_logistic)
+olive_mean_vbgf_re_logistic <- mean_vbgf_re(olive_results_logistic, n_iter)
+olive_results_df_logistic <- data.frame(
+  max_age = olive_scenario_logistic[, "max_age"],
+  M = olive_scenario_logistic[, "M"],
+  L_inf = olive_scenario_logistic[, "L_inf"],
+  k = olive_scenario_logistic[, "k"],
+  t_0 = olive_scenario_logistic[, "t_0"],
+  CV_L = olive_scenario_logistic[, "CV_L"],
+  sel_1 = olive_scenario_logistic[, "sel_1"],
+  sel_2 = olive_scenario_logistic[, "sel_2"],
+  sig_r = olive_scenario_logistic[, "sig_r"],
+  CV_Age = olive_scenario_logistic[, "CV_Age"],
+  sample_size = olive_scenario_logistic[, "sample_size"],
+  mean_re_L_inf = olive_mean_vbgf_re_logistic[, 1],
+  mean_re_k = olive_mean_vbgf_re_logistic[, 2],
+  mean_re_t_0 = olive_mean_vbgf_re_logistic[, 3],
+  mean_re_CV_L = olive_mean_vbgf_re_logistic[, 4]
 )
 
 
 set.seed(9265)
-calico_results <- apply(calico_scenario, 1, run_OM, n_iter = n_iter)
-calico_flat <- flatten_results(calico_results, calico_scenario)
-calico_mean_vbgf_re <- mean_vbgf_re(calico_results, n_iter)
-calico_results_df <- data.frame(
-  max_age = calico_scenario[, 1],
-  M = calico_scenario[, 2],
-  L_inf = calico_scenario[, 3],
-  k = calico_scenario[, 4],
-  t_0 = calico_scenario[, 5],
-  CV_L = calico_scenario[, 6],
-  sel_1 = calico_scenario[, 7],
-  sel_2 = calico_scenario[, 8],
-  sig_r = calico_scenario[, 9],
-  CV_Age = calico_scenario[, 10],
-  sample_size = calico_scenario[, 11],
-  mean_re_L_inf = calico_mean_vbgf_re[, 1],
-  mean_re_k = calico_mean_vbgf_re[, 2],
-  mean_re_t_0 = calico_mean_vbgf_re[, 3],
-  mean_re_CV_L = calico_mean_vbgf_re[, 4]
+calico_results_logistic <- future_apply(calico_scenario_logistic, 1, run_OM, n_iter = n_iter)
+calico_flat_logistic <- flatten_results(calico_results_logistic, calico_scenario_logistic)
+calico_mean_vbgf_re_logistic <- mean_vbgf_re(calico_results_logistic, n_iter)
+calico_results_df_logistic <- data.frame(
+  max_age = calico_scenario_logistic[, "max_age"],
+  M = calico_scenario_logistic[, "M"],
+  L_inf = calico_scenario_logistic[, "L_inf"],
+  k = calico_scenario_logistic[, "k"],
+  t_0 = calico_scenario_logistic[, "t_0"],
+  CV_L = calico_scenario_logistic[, "CV_L"],
+  sel_1 = calico_scenario_logistic[, "sel_1"],
+  sel_2 = calico_scenario_logistic[, "sel_2"],
+  sig_r = calico_scenario_logistic[, "sig_r"],
+  CV_Age = calico_scenario_logistic[, "CV_Age"],
+  sample_size = calico_scenario_logistic[, "sample_size"],
+  mean_re_L_inf = calico_mean_vbgf_re_logistic[, 1],
+  mean_re_k = calico_mean_vbgf_re_logistic[, 2],
+  mean_re_t_0 = calico_mean_vbgf_re_logistic[, 3],
+  mean_re_CV_L = calico_mean_vbgf_re_logistic[, 4]
 )
 
-blackgill_flat$spp <- "blackgill"
-blue_flat$spp <- "blue"
-olive_flat$spp <- "olive"
-calico_flat$spp <- "calico"
-all_flat <- rbind(blackgill_flat, blue_flat, olive_flat, calico_flat)
+blackgill_flat_logistic$spp <- "blackgill"
+blue_flat_logistic$spp <- "blue"
+olive_flat_logistic$spp <- "olive"
+calico_flat_logistic$spp <- "calico"
+all_flat_logistic <- rbind(blackgill_flat_logistic, blue_flat_logistic, olive_flat_logistic, calico_flat_logistic)
+
+save.image("workspace_logistic.RData")
+
+#Dome Shaped
+# setup scenarios for each species
+{
+  # Shared life history params
+  L_inf <- 500
+  t_0 <- 1
+  CV_L <- 0.1
+  shape <- "dome"
+  sel_1 <- NA
+  sel_2 <- NA
+  B1 <- seq(0, 400, 100)
+  B2 <- seq(-4, 0, 1)
+  B3 <- seq(8, 12, 1)
+  B4 <- seq(9, 13, 1)
+  sig_r <- 0.6
+  CV_Age <- seq(0, 0.20, 0.05)
+  sample_size <- c(500, 1000)
+  
+  column_names <- c("max_age", "M", "L_inf", "k", "t_0", "CV_L", "shape","sel_1", 
+                    "sel_2", "sig_r", "B1", "B2", "B3", "B4", "CV_Age", "sample_size")
+  
+  # Create a data frames with all possible combinations
+  # blackgill
+  max_age <- 100
+  M <- 0.075
+  k <- 0.05
+  combinations_dome <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, 
+                                   sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
+  combinations_matrix_dome <- as.matrix(combinations_dome)
+  colnames(combinations_matrix_dome) <- column_names
+  blackgill_scenario_dome <- combinations_matrix_dome
+  
+  # blue
+  max_age <- 50
+  M <- 0.15
+  k <- 0.09
+  combinations_dome <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, 
+                                   sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
+  combinations_matrix_dome <- as.matrix(combinations_dome)
+  colnames(combinations_matrix_dome) <- column_names
+  blue_scenario_dome <- combinations_matrix_dome
+  
+  # olive
+  max_age <- 30
+  M <- 0.25
+  k <- 0.152
+  combinations_dome <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, 
+                                   sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
+  combinations_matrix_dome <- as.matrix(combinations_dome)
+  colnames(combinations_matrix_dome) <- column_names
+  olive_scenario_dome <- combinations_matrix_dome
+  
+  # calico
+  max_age <- 10
+  M <- 0.5
+  k <- 0.303
+  combinations_dome <- expand.grid(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, 
+                                   sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
+  combinations_matrix_dome <- as.matrix(combinations_dome)
+  colnames(combinations_matrix_dome) <- column_names
+  calico_scenario_dome <- combinations_matrix_dome
+}
+
+n_iter <- 100
+
+# Set up parallel processing (use all available cores)
+plan(multisession)
+
+set.seed(9265)
+blackgill_results_dome <- future_apply(blackgill_scenario_dome, 1, run_OM, n_iter = n_iter)
+blackgill_flat_dome <- flatten_results(blackgill_results_dome, blackgill_scenario_dome)
+blackgill_mean_vbgf_re_dome <- mean_vbgf_re(blackgill_results_dome, n_iter)
+blackgill_results_df_dome <- data.frame(
+  max_age = blackgill_scenario_dome[, "max_age"],
+  M = blackgill_scenario_dome[, "M"],
+  L_inf = blackgill_scenario_dome[, "L_inf"],
+  k = blackgill_scenario_dome[, "k"],
+  t_0 = blackgill_scenario_dome[, "t_0"],
+  CV_L = blackgill_scenario_dome[, "CV_L"],
+  sel_1 = blackgill_scenario_dome[, "sel_1"],
+  sel_2 = blackgill_scenario_dome[, "sel_2"],
+  sig_r = blackgill_scenario_dome[, "sig_r"],
+  CV_Age = blackgill_scenario_dome[, "CV_Age"],
+  sample_size = blackgill_scenario_dome[, "sample_size"],
+  mean_re_L_inf = blackgill_mean_vbgf_re_dome[, 1],
+  mean_re_k = blackgill_mean_vbgf_re_dome[, 2],
+  mean_re_t_0 = blackgill_mean_vbgf_re_dome[, 3],
+  mean_re_CV_L = blackgill_mean_vbgf_re_dome[, 4]
+)
 
 
-save.image("workspace.RData")
+set.seed(9265)
+blue_results_dome <- future_apply(blue_scenario_dome, 1, run_OM, n_iter = n_iter)
+blue_flat_dome <- flatten_results(blue_results_dome, blue_scenario_dome)
+blue_mean_vbgf_re_dome <- mean_vbgf_re(blue_results_dome, n_iter)
+blue_results_df_dome <- data.frame(
+  max_age = blue_scenario_dome[, "max_age"],
+  M = blue_scenario_dome[, "M"],
+  L_inf = blue_scenario_dome[, "L_inf"],
+  k = blue_scenario_dome[, "k"],
+  t_0 = blue_scenario_dome[, "t_0"],
+  CV_L = blue_scenario_dome[, "CV_L"],
+  sel_1 = blue_scenario_dome[, "sel_1"],
+  sel_2 = blue_scenario_dome[, "sel_2"],
+  sig_r = blue_scenario_dome[, "sig_r"],
+  CV_Age = blue_scenario_dome[, "CV_Age"],
+  sample_size = blue_scenario_dome[, "sample_size"],
+  mean_re_L_inf = blue_mean_vbgf_re_dome[, 1],
+  mean_re_k = blue_mean_vbgf_re_dome[, 2],
+  mean_re_t_0 = blue_mean_vbgf_re_dome[, 3],
+  mean_re_CV_L = blue_mean_vbgf_re_dome[, 4]
+)
+
+
+set.seed(9265)
+olive_results_dome <- future_apply(olive_scenario_dome, 1, run_OM, n_iter = n_iter)
+olive_flat_dome <- flatten_results(olive_results_dome, olive_scenario_dome)
+olive_mean_vbgf_re_dome <- mean_vbgf_re(olive_results_dome, n_iter)
+olive_results_df_dome <- data.frame(
+  max_age = olive_scenario_dome[, "max_age"],
+  M = olive_scenario_dome[, "M"],
+  L_inf = olive_scenario_dome[, "L_inf"],
+  k = olive_scenario_dome[, "k"],
+  t_0 = olive_scenario_dome[, "t_0"],
+  CV_L = olive_scenario_dome[, "CV_L"],
+  sel_1 = olive_scenario_dome[, "sel_1"],
+  sel_2 = olive_scenario_dome[, "sel_2"],
+  sig_r = olive_scenario_dome[, "sig_r"],
+  CV_Age = olive_scenario_dome[, "CV_Age"],
+  sample_size = olive_scenario_dome[, "sample_size"],
+  mean_re_L_inf = olive_mean_vbgf_re_dome[, 1],
+  mean_re_k = olive_mean_vbgf_re_dome[, 2],
+  mean_re_t_0 = olive_mean_vbgf_re_dome[, 3],
+  mean_re_CV_L = olive_mean_vbgf_re_dome[, 4]
+)
+
+
+set.seed(9265)
+calico_results_dome <- future_apply(calico_scenario_dome, 1, run_OM, n_iter = n_iter)
+calico_flat_dome <- flatten_results(calico_results_dome, calico_scenario_dome)
+calico_mean_vbgf_re_dome <- mean_vbgf_re(calico_results_dome, n_iter)
+calico_results_df_dome <- data.frame(
+  max_age = calico_scenario_dome[, "max_age"],
+  M = calico_scenario_dome[, "M"],
+  L_inf = calico_scenario_dome[, "L_inf"],
+  k = calico_scenario_dome[, "k"],
+  t_0 = calico_scenario_dome[, "t_0"],
+  CV_L = calico_scenario_dome[, "CV_L"],
+  sel_1 = calico_scenario_dome[, "sel_1"],
+  sel_2 = calico_scenario_dome[, "sel_2"],
+  sig_r = calico_scenario_dome[, "sig_r"],
+  CV_Age = calico_scenario_dome[, "CV_Age"],
+  sample_size = calico_scenario_dome[, "sample_size"],
+  mean_re_L_inf = calico_mean_vbgf_re_dome[, 1],
+  mean_re_k = calico_mean_vbgf_re_dome[, 2],
+  mean_re_t_0 = calico_mean_vbgf_re_dome[, 3],
+  mean_re_CV_L = calico_mean_vbgf_re_dome[, 4]
+)
+
+blackgill_flat_dome$spp <- "blackgill"
+blue_flat_dome$spp <- "blue"
+olive_flat_dome$spp <- "olive"
+calico_flat_dome$spp <- "calico"
+all_flat_dome <- rbind(blackgill_flat_dome, blue_flat_dome, olive_flat_dome, calico_flat_dome)
+
+save.image("workspace_all_scenarios.RData")
 
 
 
@@ -203,8 +379,13 @@ L_inf <- 500 # asymtotic mean length
 k <- 0.05 # von B growth coeeficient
 t_0 <- 0.05 # theoretical age of 0 length could be - if L_inf(1-exp(-k*(t-t_0)))
 CV_L <- 0.1 # variation in growth (comes in later)
+shape <- "logistic"
 sel_1 <- 250 # Selectivity is length based with sel50% at length 70
 sel_2 <- 10 # determines how steep the logistic curve is
+B1 <- NA
+B2 <- NA
+B3 <- NA
+B4 <- NA
 sig_r <- 0.6
 sample_size <- 500
 CV_Age <- 0
@@ -212,7 +393,8 @@ CV_Age <- 0
 seed <- 235
 set.seed(seed)
 
-results <- OM(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
+results <- OM(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, 
+              sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
 
 plot(results[[1]])
 

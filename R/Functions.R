@@ -2,7 +2,18 @@ logistic_selectivity_function <- function(mean_len, sel_1, sel_2) {
   return(1 / (1 + exp(-sel_2 * (mean_len - sel_1))))
 }
 
-OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size){
+dome_selectivity_function <- function(size, B1, B2, B3, B4) {
+  max_size <- max(size)
+  peak2 <- B1 + 1 + ((0.99 * max_size - B1 - 1) / (1 + exp(-B2)))
+  j1 <- (1 + exp(-20 * ((size - B1) / (1 + abs(size - B1)))))^-1
+  j2 <- (1 + exp(-20 * ((size - peak2) / (1 + abs(size - peak2)))))^-1
+  asc <- exp(-(size - B1)^2 / exp(B3))
+  dsc <- exp(-(size - peak2)^2 / exp(B4))
+  sel <- asc * (1 - j1) + j1 * ((1 - j2) + j2 * dsc)
+  return(sel / max(sel))
+}
+
+OM <- function(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size){
   age<-1:max_age # age vector
   mean_len<-L_inf*(1-exp(-k*(age+t_0))) #mean length using the von B
   
@@ -11,8 +22,19 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sam
   lxo<-c(1,cumprod(surv)[1:(max_age-1)]) #survivorship
   lxo[max_age]=lxo[max_age]/(1-surv[max_age]) #accounting for the plus group
   
-  sel<- logistic_selectivity_function(1:1000, sel_1, sel_2)# logistic selectivity #plogis(mean_len,sel_1,sel_2)
-  sel<- sel/max(sel) #make sure the max selectivity is 1 
+  size <- 1:1000 #range of plausible lengths, L_inf is 500
+  max_size <- max(size)
+  
+  if (shape == "dome") {
+    dome_selectivity_function(size, B1, B2, B3, B4)
+  } else if (shape == "logistic") {
+    sel <- logistic_selectivity_function(size, sel_1, sel_2)
+    
+  } else {
+    stop("Invalid shape specified. Please choose 'dome' or 'logistic'.")
+  }
+  
+  sel <- sel / max(sel)
   
   perr<-rnorm((max_age),0,sig_r) #recruitment anomalies
   
