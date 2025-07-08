@@ -1,8 +1,5 @@
 # To Do
 # cleanup code, cleanup comments
-# make sure selectivity is applied correctly
-# maybe make CV_L age related because young ages should have lower CV_L
-# should I add in age 0, cope didn't
 
 rm(list = ls())
 gc()
@@ -14,13 +11,15 @@ library(dplyr)
 library(tidyr)
 library(future.apply)
 
+n_iter <- 100
+
 # setup scenarios for each species
 {
   # Shared life history params
   L_inf <- 500
   t_0 <- 1
   CV_L <- 0.1
-  shape <- "logistic"
+  shape <- 1 #1=logistic, 2=dome
   sel_1 <- seq(0, 400, 50) # all varied params must be same length for surface plot
   sel_2 <- seq(0.01, 0.21, 0.025) # seq(1, 101, 10) #cope set to ~100
   B1 <- NA
@@ -76,8 +75,6 @@ library(future.apply)
   calico_scenario_logistic <- combinations_matrix_logistic
 }
 
-n_iter <- 100
-
 # Set up parallel processing (use all available cores)
 plan(multisession)
 
@@ -92,8 +89,13 @@ blackgill_results_df_logistic <- data.frame(
   k = blackgill_scenario_logistic[, "k"],
   t_0 = blackgill_scenario_logistic[, "t_0"],
   CV_L = blackgill_scenario_logistic[, "CV_L"],
+  shape = blackgill_scenario_logistic[, "shape"],
   sel_1 = blackgill_scenario_logistic[, "sel_1"],
   sel_2 = blackgill_scenario_logistic[, "sel_2"],
+  B1 = blackgill_scenario_logistic[, "B1"],
+  B2 = blackgill_scenario_logistic[, "B2"],
+  B3 = blackgill_scenario_logistic[, "B3"],
+  B4 = blackgill_scenario_logistic[, "B4"],
   sig_r = blackgill_scenario_logistic[, "sig_r"],
   CV_Age = blackgill_scenario_logistic[, "CV_Age"],
   sample_size = blackgill_scenario_logistic[, "sample_size"],
@@ -115,8 +117,13 @@ blue_results_df_logistic <- data.frame(
   k = blue_scenario_logistic[, "k"],
   t_0 = blue_scenario_logistic[, "t_0"],
   CV_L = blue_scenario_logistic[, "CV_L"],
+  shape = blue_scenario_logistic[, "shape"],
   sel_1 = blue_scenario_logistic[, "sel_1"],
   sel_2 = blue_scenario_logistic[, "sel_2"],
+  B1 = blue_scenario_logistic[, "B1"],
+  B2 = blue_scenario_logistic[, "B2"],
+  B3 = blue_scenario_logistic[, "B3"],
+  B4 = blue_scenario_logistic[, "B4"],
   sig_r = blue_scenario_logistic[, "sig_r"],
   CV_Age = blue_scenario_logistic[, "CV_Age"],
   sample_size = blue_scenario_logistic[, "sample_size"],
@@ -138,8 +145,13 @@ olive_results_df_logistic <- data.frame(
   k = olive_scenario_logistic[, "k"],
   t_0 = olive_scenario_logistic[, "t_0"],
   CV_L = olive_scenario_logistic[, "CV_L"],
+  shape = olive_scenario_logistic[, "shape"],
   sel_1 = olive_scenario_logistic[, "sel_1"],
   sel_2 = olive_scenario_logistic[, "sel_2"],
+  B1 = olive_scenario_logistic[, "B1"],
+  B2 = olive_scenario_logistic[, "B2"],
+  B3 = olive_scenario_logistic[, "B3"],
+  B4 = olive_scenario_logistic[, "B4"],
   sig_r = olive_scenario_logistic[, "sig_r"],
   CV_Age = olive_scenario_logistic[, "CV_Age"],
   sample_size = olive_scenario_logistic[, "sample_size"],
@@ -161,8 +173,13 @@ calico_results_df_logistic <- data.frame(
   k = calico_scenario_logistic[, "k"],
   t_0 = calico_scenario_logistic[, "t_0"],
   CV_L = calico_scenario_logistic[, "CV_L"],
+  shape = calico_scenario_logistic[, "shape"],
   sel_1 = calico_scenario_logistic[, "sel_1"],
   sel_2 = calico_scenario_logistic[, "sel_2"],
+  B1 = calico_scenario_logistic[, "B1"],
+  B2 = calico_scenario_logistic[, "B2"],
+  B3 = calico_scenario_logistic[, "B3"],
+  B4 = calico_scenario_logistic[, "B4"],
   sig_r = calico_scenario_logistic[, "sig_r"],
   CV_Age = calico_scenario_logistic[, "CV_Age"],
   sample_size = calico_scenario_logistic[, "sample_size"],
@@ -187,7 +204,7 @@ save.image("workspace_logistic.RData")
   L_inf <- 500
   t_0 <- 1
   CV_L <- 0.1
-  shape <- "dome"
+  shape <- 2  #1=logistic, 2=dome
   sel_1 <- NA
   sel_2 <- NA
   B1 <- seq(0, 400, 100)
@@ -199,7 +216,7 @@ save.image("workspace_logistic.RData")
   sample_size <- c(500, 1000)
   
   column_names <- c("max_age", "M", "L_inf", "k", "t_0", "CV_L", "shape","sel_1", 
-                    "sel_2", "sig_r", "B1", "B2", "B3", "B4", "CV_Age", "sample_size")
+                    "sel_2", "B1", "B2", "B3", "B4", "sig_r", "CV_Age", "sample_size")
   
   # Create a data frames with all possible combinations
   # blackgill
@@ -243,7 +260,6 @@ save.image("workspace_logistic.RData")
   calico_scenario_dome <- combinations_matrix_dome
 }
 
-n_iter <- 100
 
 # Set up parallel processing (use all available cores)
 plan(multisession)
@@ -259,8 +275,13 @@ blackgill_results_df_dome <- data.frame(
   k = blackgill_scenario_dome[, "k"],
   t_0 = blackgill_scenario_dome[, "t_0"],
   CV_L = blackgill_scenario_dome[, "CV_L"],
+  shape = blackgill_scenario_dome[, "shape"],
   sel_1 = blackgill_scenario_dome[, "sel_1"],
   sel_2 = blackgill_scenario_dome[, "sel_2"],
+  B1 = blackgill_scenario_dome[, "B1"],
+  B2 = blackgill_scenario_dome[, "B2"],
+  B3 = blackgill_scenario_dome[, "B3"],
+  B4 = blackgill_scenario_dome[, "B4"],
   sig_r = blackgill_scenario_dome[, "sig_r"],
   CV_Age = blackgill_scenario_dome[, "CV_Age"],
   sample_size = blackgill_scenario_dome[, "sample_size"],
@@ -282,8 +303,13 @@ blue_results_df_dome <- data.frame(
   k = blue_scenario_dome[, "k"],
   t_0 = blue_scenario_dome[, "t_0"],
   CV_L = blue_scenario_dome[, "CV_L"],
+  shape = blue_scenario_dome[, "shape"],
   sel_1 = blue_scenario_dome[, "sel_1"],
   sel_2 = blue_scenario_dome[, "sel_2"],
+  B1 = blue_scenario_dome[, "B1"],
+  B2 = blue_scenario_dome[, "B2"],
+  B3 = blue_scenario_dome[, "B3"],
+  B4 = blue_scenario_dome[, "B4"],
   sig_r = blue_scenario_dome[, "sig_r"],
   CV_Age = blue_scenario_dome[, "CV_Age"],
   sample_size = blue_scenario_dome[, "sample_size"],
@@ -305,8 +331,13 @@ olive_results_df_dome <- data.frame(
   k = olive_scenario_dome[, "k"],
   t_0 = olive_scenario_dome[, "t_0"],
   CV_L = olive_scenario_dome[, "CV_L"],
+  shape = olive_scenario_dome[, "shape"],
   sel_1 = olive_scenario_dome[, "sel_1"],
   sel_2 = olive_scenario_dome[, "sel_2"],
+  B1 = olive_scenario_dome[, "B1"],
+  B2 = olive_scenario_dome[, "B2"],
+  B3 = olive_scenario_dome[, "B3"],
+  B4 = olive_scenario_dome[, "B4"],
   sig_r = olive_scenario_dome[, "sig_r"],
   CV_Age = olive_scenario_dome[, "CV_Age"],
   sample_size = olive_scenario_dome[, "sample_size"],
@@ -328,8 +359,13 @@ calico_results_df_dome <- data.frame(
   k = calico_scenario_dome[, "k"],
   t_0 = calico_scenario_dome[, "t_0"],
   CV_L = calico_scenario_dome[, "CV_L"],
+  shape = calico_scenario_dome[, "shape"],
   sel_1 = calico_scenario_dome[, "sel_1"],
   sel_2 = calico_scenario_dome[, "sel_2"],
+  B1 = calico_scenario_dome[, "B1"],
+  B2 = calico_scenario_dome[, "B2"],
+  B3 = calico_scenario_dome[, "B3"],
+  B4 = calico_scenario_dome[, "B4"],
   sig_r = calico_scenario_dome[, "sig_r"],
   CV_Age = calico_scenario_dome[, "CV_Age"],
   sample_size = calico_scenario_dome[, "sample_size"],
@@ -379,7 +415,7 @@ L_inf <- 500 # asymtotic mean length
 k <- 0.05 # von B growth coeeficient
 t_0 <- 0.05 # theoretical age of 0 length could be - if L_inf(1-exp(-k*(t-t_0)))
 CV_L <- 0.1 # variation in growth (comes in later)
-shape <- "logistic"
+shape <- 1
 sel_1 <- 250 # Selectivity is length based with sel50% at length 70
 sel_2 <- 10 # determines how steep the logistic curve is
 B1 <- NA

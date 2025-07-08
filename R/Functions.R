@@ -25,9 +25,9 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, sel_2, B1, B2, B3,
   size <- 1:1000 #range of plausible lengths, L_inf is 500
   max_size <- max(size)
   
-  if (shape == "dome") {
-    dome_selectivity_function(size, B1, B2, B3, B4)
-  } else if (shape == "logistic") {
+  if (shape == 2) {
+    sel <- dome_selectivity_function(size, B1, B2, B3, B4)
+  } else if (shape == 1) {
     sel <- logistic_selectivity_function(size, sel_1, sel_2)
     
   } else {
@@ -160,17 +160,22 @@ run_OM <- function(row, n_iter) {
   k <- row[4]
   t_0 <- row[5]
   CV_L <- row[6]
-  sel_1 <- row[7]
-  sel_2 <- row[8]
-  sig_r <- row[9]
-  CV_Age <- row[10]
-  sample_size <- row[11]
+  shape <- row[7]
+  sel_1 <- row[8]
+  sel_2 <- row[9]
+  B1 <- row[10]
+  B2 <- row[11]
+  B3 <- row[12]
+  B4 <- row[13]
+  sig_r <- row[14]
+  CV_Age <- row[15]
+  sample_size <- row[16]
   
   results <- list()
   k_re_estimates <- vector(length = n_iter) 
   
   for (i in 1:n_iter) {
-    results[[i]] <- OM(max_age, M, L_inf, k, t_0, CV_L, sel_1, sel_2, sig_r, CV_Age, sample_size)
+    results[[i]] <- OM(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, sel_2, B1, B2, B3, B4, sig_r, CV_Age, sample_size)
   }
   
   return(results)
@@ -197,17 +202,18 @@ mean_vbgf_re <- function(results, n_iter) {
 }
 
 flatten_results <- function(spp_results, spp_scenario){
-  flat <- matrix(nrow = length(spp_results)*n_iter, ncol = 15)
+  flat <- matrix(nrow = length(spp_results)*n_iter, ncol = 20)
   colnames(flat) <- c(
     "L_inf_RE", "k_RE", "t_0_RE", "CV_L_RE",
     "max_age", "M", "L_inf", "k", "t_0",
-    "CV_L", "sel_1", "sel_2", "sig_r",
+    "CV_L", "shape", "sel_1", "sel_2", 
+    "B1", "B2", "B3", "B4", "sig_r",
     "CV_Age", "sample_size"
   )
   for (i in 1:length(spp_results)) {
     for (j in 1:n_iter) {
       flat[((i-1)*n_iter)+j,1:4] <- spp_results[[i]][[j]][[1]][1:4]
-      flat[((i-1)*n_iter)+j,5:15] <- spp_scenario[i,]
+      flat[((i-1)*n_iter)+j,5:20] <- spp_scenario[i,]
     }
   }
   return(as.data.frame(flat))
