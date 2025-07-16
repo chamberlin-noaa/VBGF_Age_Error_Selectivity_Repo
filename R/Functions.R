@@ -218,3 +218,63 @@ flatten_results <- function(spp_results, spp_scenario){
   }
   return(as.data.frame(flat))
 }
+
+dome_batch <- function(scenario_matrix, species_name, n_iter, batch_size) {
+  n_scenarios <- nrow(scenario_matrix)
+  n_batches <- ceiling(n_scenarios / batch_size)
+  
+  results_list <- list()
+  flat_list <- list()
+  
+  for (i in 1:n_batches) {
+    
+    cat(sprintf("Processing %s: Batch %d of %d...\n", species_name, i, n_batches))
+    
+    start_row <- (i - 1) * batch_size + 1
+    end_row <- min(i * batch_size, n_scenarios)
+    
+    current_scenarios <- scenario_matrix[start_row:end_row, ]
+    
+    batch_results <- future_apply(current_scenarios, 1, run_OM, n_iter = n_iter)
+    
+    flat_results <- flatten_results(batch_results, current_scenarios)
+    mean_re <- mean_vbgf_re(batch_results, n_iter)
+    
+    results_df <- data.frame(
+      max_age = current_scenarios[, "max_age"],
+      M = current_scenarios[, "M"],
+      L_inf = current_scenarios[, "L_inf"],
+      k = current_scenarios[, "k"],
+      t_0 = current_scenarios[, "t_0"],
+      CV_L = current_scenarios[, "CV_L"],
+      shape = current_scenarios[, "shape"],
+      sel_1 = current_scenarios[, "sel_1"],
+      sel_2 = current_scenarios[, "sel_2"],
+      B1 = current_scenarios[, "B1"],
+      B2 = current_scenarios[, "B2"],
+      B3 = current_scenarios[, "B3"],
+      B4 = current_scenarios[, "B4"],
+      sig_r = current_scenarios[, "sig_r"],
+      CV_Age = current_scenarios[, "CV_Age"],
+      sample_size = current_scenarios[, "sample_size"],
+      mean_re_L_inf = mean_re[, 1],
+      mean_re_k = mean_re[, 2],
+      mean_re_t_0 = mean_re[, 3],
+      mean_re_CV_L = mean_re[, 4]
+    )
+    
+    results_list[[i]] <- results_df
+    flat_list[[i]] <- flat_results
+    
+    #remove batch to prevent memory issues
+    rm(batch_results, flat_results, mean_re, results_df, current_scenarios)
+    gc()
+  }
+
+  final_results_df <- do.call(rbind, results_list)
+  final_flat_df <- do.call(rbind, flat_list)
+  
+  cat(sprintf("Finished processing for %s.\n\n", species_name))
+  
+  return(list(results_df = final_results_df, flat_df = final_flat_df))
+}

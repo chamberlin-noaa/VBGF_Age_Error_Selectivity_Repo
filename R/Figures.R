@@ -13,7 +13,7 @@ library(plotly)
 library(reshape2)
 library(cowplot)
 
-setwd("C:/Users/Derek.Chamberlin/Work/Research/VBGF_Age_Error_Selectivity_Repo")
+setwd("G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo")
 source("./R/Functions.R")
 
 #Boxplot
@@ -21,9 +21,9 @@ param_box_plot <- function(df, param, y_range, y_range_break){
   base_plot <- ggplot(df, aes(x = as.factor(sel_1), y = {{ param }}, fill = as.factor(sel_2))) +
     geom_boxplot() +
     geom_hline(yintercept = 0, color = "red", linewidth = 0.8) +
-    facet_wrap(~ CV_Age, ncol = 5, labeller = as_labeller(function(value) paste("CV =", value))) +
+    facet_wrap(~ CV_Age, ncol = 5, labeller = label_bquote(CV[a]~"="~.(CV_Age))) +
     scale_y_continuous(limits = c(-y_range, y_range), breaks = seq(-y_range, y_range, by = y_range_break)) +
-    labs(fill = "sel_2") +
+    labs(fill = expression(Phi[2])) +
     theme_minimal() +
     theme(
       strip.placement = "outside",
@@ -40,59 +40,68 @@ param_box_plot <- function(df, param, y_range, y_range_break){
   return(base_plot)
 }
 
-create_comparison_plot <- function(param, y_axis_label, sample_size, sel_1_sub, y_range, y_range_break) {
+create_comparison_plot <- function(param, y_axis_label, sample_size_sub, sel_1_sub, sel_2_sub, y_range, y_range_break) {
   param_symbol <- rlang::sym(param)
   
-  blackgill_data <- subset(blackgill_flat, sample_size == sample_size & sel_1 %in% sel_1_sub)
-  blue_data <- subset(blue_flat, sample_size == sample_size & sel_1 %in% sel_1_sub)
-  calico_data <- subset(calico_flat, sample_size == sample_size & sel_1 %in% sel_1_sub)
-  olive_data <- subset(olive_flat, sample_size == sample_size & sel_1 %in% sel_1_sub)
+  blackgill_data <- subset(blackgill_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
+  blue_data <- subset(blue_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
+  olive_data <- subset(olive_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
+  calico_data <- subset(calico_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
   
   p1 <- param_box_plot(blackgill_data, !!param_symbol, y_range, y_range_break)
   p2 <- param_box_plot(blue_data, !!param_symbol, y_range, y_range_break)
-  p3 <- param_box_plot(calico_data, !!param_symbol, y_range, y_range_break)
-  p4 <- param_box_plot(olive_data, !!param_symbol, y_range, y_range_break)
+  p3 <- param_box_plot(olive_data, !!param_symbol, y_range, y_range_break)
+  p4 <- param_box_plot(calico_data, !!param_symbol, y_range, y_range_break)
   
   combined <- (p1 / p2 / p3 / p4) + plot_layout(guides = "collect") & theme(legend.position = "right")
   
   final_plot <- ggdraw() +
     draw_plot(combined, x = 0.02, y = 0.02, width = 0.99, height = 0.99) +
-    draw_label("sel_1", x = 0.5, y = 0.01, vjust = 0, size = 16, fontface = "bold") +
+    draw_label(expression(bold(Phi[1])), x = 0.5, y = 0.01, vjust = 0, size = 16, fontface = "bold") +
     draw_label(y_axis_label, x = 0.01, y = 0.5, angle = 90, vjust = 1, size = 16, fontface = "bold")
   
   return(final_plot)
 }
 
-k_re_plot <- create_comparison_plot("k_RE", "Relative error in K", 500, c(0, 200, 400), 1.5, 0.25)
+sel_1_sub <- c(0, 200, 400)
+sel_2_sub <- c(0.010, 0.060, 0.110, 0.160, 0.210)
+
+k_re_plot <- create_comparison_plot("k_RE", expression("Relative error in " * italic(k)), 500, sel_1_sub, sel_2_sub,  1.5, 0.50)
 k_re_plot
-ggsave("k_RE_boxplot.png", plot = k_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
+ggsave("k_RE_boxplot_n_500_logistic.png", plot = k_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
 
-L_inf_re_plot <- create_comparison_plot("L_inf_RE", "Relative error in L-infinity", 500, c(0, 200, 400), 1, 0.25)
+L_inf_re_plot <- create_comparison_plot("L_inf_RE", expression("Relative error in " * italic(L[infinity])), 500, sel_1_sub, sel_2_sub, 1, 0.25)
 L_inf_re_plot
-ggsave("L_inf_RE_boxplot.png", plot = L_inf_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
+ggsave("L_inf_RE_boxplot_n_500_logistic.png", plot = L_inf_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
 
-t_0_re_plot <- create_comparison_plot("t_0_RE", "Relative error in t-zero", 500, c(0, 200, 400), 200, 50)
+t_0_re_plot <- create_comparison_plot("t_0_RE", expression("Relative error in " * italic(t[0])), 500, sel_1_sub, sel_2_sub, 100, 25)
 t_0_re_plot
-ggsave("t_0_RE_boxplot.png", plot = t_0_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
+ggsave("t_0_RE_boxplot_n_500_logistic.png", plot = t_0_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
+
+sel_1_sub <- c(0, 100, 200)
+t_0_re_plot <- create_comparison_plot("t_0_RE", expression("Relative error in " * italic(t[0])), 500, sel_1_sub, sel_2_sub, 15, 5)
+t_0_re_plot
+ggsave("t_0_RE_boxplot_n_500_logistic_dif_subset.png", plot = t_0_re_plot, width = 8.5, height = 11, units = "in", bg = "white")
 
 #Selectivity Figure
 {
   size <- 1:750
   param_combinations_dome <- list(
-    "B1=200, B2=-2, B3=10, B4=11" = c(B1=200, B2=-2, B3=10, B4=11),
-    "B1=200, B2=-4, B3=8, B4=9" = c(B1=200, B2=-4, B3=8, B4=9),
-    "B1=200, B2=0, B3=12, B4=13" = c(B1=200, B2=0, B3=12, B4=13),
-    "B1=300, B2=-2, B3=10, B4=11" = c(B1=300, B2=-2, B3=10, B4=11),
-    "B1=100, B2=-2, B3=10, B4=11" = c(B1=100, B2=-2, B3=10, B4=11)
+    "B[1]==200*','~B[2]==-2*','~B[3]==10*','~B[4]==11" = c(B1 = 200, B2 = -2, B3 = 10, B4 = 11),
+    "B[1]==200*','~B[2]==-4*','~B[3]==8*','~B[4]==9"   = c(B1 = 200, B2 = -4, B3 = 8, B4 = 9),
+    "B[1]==200*','~B[2]==0*','~B[3]==12*','~B[4]==13"  = c(B1 = 200, B2 = 0, B3 = 12, B4 = 13),
+    "B[1]==300*','~B[2]==-2*','~B[3]==10*','~B[4]==11" = c(B1 = 300, B2 = -2, B3 = 10, B4 = 11),
+    "B[1]==100*','~B[2]==-2*','~B[3]==10*','~B[4]==11" = c(B1 = 100, B2 = -2, B3 = 10, B4 = 11)
   )
   
   param_combinations_logistic <- list(
-    "L50=200, Slope=0.11" = c(L50=200, slope=0.02),
-    "L50=200, Slope=0.035" = c(L50=200, slope=0.05),
-    "L50=200, Slope=0.185" = c(L50=200, slope=0.01),
-    "L50=300, Slope=0.11" = c(L50=300, slope=0.02),
-    "L50=100, Slope=0.11" = c(L50=100, slope=0.02)
+    "Phi[1]==200*','~Phi[2]==0.02" = c(L50 = 200, slope = 0.02),
+    "Phi[1]==200*','~Phi[2]==0.05" = c(L50 = 200, slope = 0.05),
+    "Phi[1]==200*','~Phi[2]==0.01" = c(L50 = 200, slope = 0.01),
+    "Phi[1]==300*','~Phi[2]==0.02" = c(L50 = 300, slope = 0.02),
+    "Phi[1]==100*','~Phi[2]==0.02" = c(L50 = 100, slope = 0.02)
   )
+  
   
   # Create data frames for plotting with ggplot2
   df_dome <- do.call(rbind, lapply(names(param_combinations_dome), function(name) {
@@ -128,7 +137,7 @@ ggsave("t_0_RE_boxplot.png", plot = t_0_re_plot, width = 8.5, height = 11, units
       color = "Parameters"
     ) +
     theme_minimal() +
-    scale_color_viridis_d() +
+    scale_color_viridis_d(labels = scales::parse_format()) +
     theme(
       panel.grid = element_blank(),
       panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
@@ -154,7 +163,7 @@ ggsave("t_0_RE_boxplot.png", plot = t_0_re_plot, width = 8.5, height = 11, units
       color = "Parameters"
     ) +
     theme_minimal() +
-    scale_color_viridis_d() +
+    scale_color_viridis_d(labels = scales::parse_format()) +
     theme(
       panel.grid = element_blank(),
       panel.border = element_rect(color = "black", fill = NA, linewidth = 1),

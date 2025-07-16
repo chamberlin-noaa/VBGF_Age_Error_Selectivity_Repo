@@ -50,14 +50,25 @@ AIC_models <- function(df, param){
 #Best fit models
 #think about trying a multispecies model
 
-all_flat_k <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+spp+as.factor(sample_size), data = all_flat)
+all_flat_k <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)*as.factor(spp)*as.factor(sample_size), data = all_flat_logistic)
 summary(all_flat_k)
-qqnorm(residuals(all_flat_k))
-qqline(residuals(all_flat_k))
+par(mfrow = c(2, 2))
+plot(all_flat_k)
+par(mfrow = c(1, 1))
+
+all_flat_L_inf <- aov(L_inf_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
+summary(all_flat_L_inf)
+qqnorm(residuals(all_flat_L_inf))
+qqline(residuals(all_flat_L_inf))
+
+all_flat_t_0 <- aov(t_0_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
+summary(all_flat_t_0)
+qqnorm(residuals(all_flat_t_0))
+qqline(residuals(all_flat_t_0))
 
 #look at sample sizes TO DO!!!!!!!!!! This
 all_flat_k_1 <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+spp+as.factor(sample_size), data = all_flat)
-all_flat_k_2 <- aov(k_RE+1 ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+spp, data = subset(all_flat, all_flat$sample_size == 1000))
+all_flat_k_2 <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+spp, data = subset(all_flat_logistic, all_flat_logistic$sample_size == 1000))
 all_flat_k_3 <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2), data = subset(all_flat, all_flat$sample_size == 1000))
 
 AIC(all_flat_k_1, all_flat_k_2, all_flat_k_3)
