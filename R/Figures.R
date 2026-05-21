@@ -87,23 +87,22 @@ ggsave("t_0_RE_boxplot_n_500_logistic_dif_subset.png", plot = t_0_re_plot, width
 {
   size <- 1:750
   param_combinations_dome <- list(
+    "B[1]==100*','~B[2]==-2*','~B[3]==10*','~B[4]==11" = c(B1 = 100, B2 = -2, B3 = 10, B4 = 11),
     "B[1]==200*','~B[2]==-2*','~B[3]==10*','~B[4]==11" = c(B1 = 200, B2 = -2, B3 = 10, B4 = 11),
     "B[1]==200*','~B[2]==-4*','~B[3]==8*','~B[4]==9"   = c(B1 = 200, B2 = -4, B3 = 8, B4 = 9),
-    "B[1]==200*','~B[2]==0*','~B[3]==12*','~B[4]==13"  = c(B1 = 200, B2 = 0, B3 = 12, B4 = 13),
-    "B[1]==300*','~B[2]==-2*','~B[3]==10*','~B[4]==11" = c(B1 = 300, B2 = -2, B3 = 10, B4 = 11),
-    "B[1]==100*','~B[2]==-2*','~B[3]==10*','~B[4]==11" = c(B1 = 100, B2 = -2, B3 = 10, B4 = 11)
+    "B[1]==200*','~B[2]==-1*','~B[3]==11*','~B[4]==12"  = c(B1 = 200, B2 = -1, B3 = 11, B4 = 12),
+    "B[1]==300*','~B[2]==-2*','~B[3]==10*','~B[4]==11" = c(B1 = 300, B2 = -2, B3 = 10, B4 = 11)
   )
   
   param_combinations_logistic <- list(
-    "Phi[1]==200*','~Phi[2]==0.02" = c(L50 = 200, slope = 0.02),
-    "Phi[1]==200*','~Phi[2]==0.05" = c(L50 = 200, slope = 0.05),
+    "Phi[1]==100*','~Phi[2]==0.035" = c(L50 = 100, slope = 0.035),
     "Phi[1]==200*','~Phi[2]==0.01" = c(L50 = 200, slope = 0.01),
-    "Phi[1]==300*','~Phi[2]==0.02" = c(L50 = 300, slope = 0.02),
-    "Phi[1]==100*','~Phi[2]==0.02" = c(L50 = 100, slope = 0.02)
+    "Phi[1]==200*','~Phi[2]==0.035" = c(L50 = 200, slope = 0.035),
+    "Phi[1]==200*','~Phi[2]==0.21" = c(L50 = 200, slope = 0.21),
+    "Phi[1]==300*','~Phi[2]==0.035" = c(L50 = 300, slope = 0.035)
+
   )
   
-  
-  # Create data frames for plotting with ggplot2
   df_dome <- do.call(rbind, lapply(names(param_combinations_dome), function(name) {
     params <- param_combinations_dome[[name]]
     data.frame(
@@ -122,7 +121,9 @@ ggsave("t_0_RE_boxplot_n_500_logistic_dif_subset.png", plot = t_0_re_plot, width
     )
   }))
   
-  # Create the second plot (p2) with ggplot
+  df_dome$combination <- factor(df_dome$combination, levels = names(param_combinations_dome))
+  df_logistic$combination <- factor(df_logistic$combination, levels = names(param_combinations_logistic))
+
   p1 <- ggplot(df_logistic, aes(x = size, y = selectivity, color = combination)) +
     geom_line(linewidth = 1) +
     scale_x_continuous(
@@ -148,7 +149,6 @@ ggsave("t_0_RE_boxplot_n_500_logistic_dif_subset.png", plot = t_0_re_plot, width
     ) +
     annotate("text", x=20, y=1.02, label= "A", size = 5.5, fontface = "bold")
   
-  # Create the first plot (p1) with ggplot
   p2 <- ggplot(df_dome, aes(x = size, y = selectivity, color = combination)) +
     geom_line(linewidth = 1) +
     scale_x_continuous(
@@ -174,10 +174,7 @@ ggsave("t_0_RE_boxplot_n_500_logistic_dif_subset.png", plot = t_0_re_plot, width
     ) +
     annotate("text", x=20, y=1.02, label= "B", size = 5.5, fontface = "bold")
   
-  # Combine the plots using patchwork
   final_plot <- p1 / p2
-  
-
   
   final_plot <- ggdraw() +
     draw_plot(final_plot, x = 0.02, y = 0.02, width = 0.99, height = 0.99) +

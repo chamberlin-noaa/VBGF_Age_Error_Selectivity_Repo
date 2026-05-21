@@ -1,3 +1,68 @@
+rm(list = ls())
+gc()
+
+#Logistic ANOVAs
+load("G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/R/workspace_logistic.RData")
+all_flat_k_logistic <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
+summary(all_flat_k_logistic)
+par(mfrow = c(2, 2))
+plot(all_flat_k_logistic)
+par(mfrow = c(1, 1))
+
+all_flat_L_inf_logistic <- aov(L_inf_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
+summary(all_flat_L_inf_logistic)
+par(mfrow = c(2, 2))
+plot(all_flat_L_inf_logistic)
+par(mfrow = c(1, 1))
+
+all_flat_t_0_logistic <- aov(t_0_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
+summary(all_flat_t_0_logistic)
+par(mfrow = c(2, 2))
+plot(all_flat_t_0_logistic)
+par(mfrow = c(1, 1))
+
+objects_to_keep <- c("all_flat_k_logistic", "all_flat_L_inf_logistic", "all_flat_t_0_logistic")
+rm(list = setdiff(ls(), objects_to_keep))
+gc()
+
+#Dome ANOVAs
+load("G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/R/workspace_dome.RData")
+
+#remove some scenarios because ANOVA requires too much RAM
+all_reduced <- subset(all_flat_dome, B1 != 400)
+all_reduced <- subset(all_reduced, B2 != 0)
+all_reduced <- subset(all_reduced, B3 != 12)
+all_reduced <- subset(all_reduced, B4 != 13)
+
+objects_to_keep <- c("all_reduced")
+rm(list = setdiff(ls(), objects_to_keep))
+gc()
+
+
+all_flat_k_dome <- aov(k_RE ~ as.factor(CV_Age)*as.factor(B1)*as.factor(B2)*as.factor(B3)*as.factor(B4)+as.factor(spp)+as.factor(sample_size), data = all_reduced)
+summary(all_flat_k_dome)
+par(mfrow = c(2, 2))
+plot(all_flat_k_dome)
+par(mfrow = c(1, 1))
+
+all_flat_L_inf_dome <- aov(L_inf_RE ~ as.factor(CV_Age)*as.factor(B1)*as.factor(B2)*as.factor(B3)*as.factor(B4)+as.factor(spp)+as.factor(sample_size), data = all_reduced)
+summary(all_flat_L_inf_dome)
+par(mfrow = c(2, 2))
+plot(all_flat_L_inf_dome)
+par(mfrow = c(1, 1))
+
+all_flat_t_0_dome <- aov(t_0_RE ~ as.factor(CV_Age)*as.factor(B1)*as.factor(B2)*as.factor(B3)*as.factor(B4)+as.factor(spp)+as.factor(sample_size), data = all_reduced)
+summary(all_flat_t_0_dome)
+par(mfrow = c(2, 2))
+plot(all_flat_t_0_dome)
+par(mfrow = c(1, 1))
+
+objects_to_keep <- c("all_flat_k_logistic", "all_flat_L_inf_logistic", "all_flat_t_0_logistic", "all_flat_k_dome", "all_flat_L_inf_dome", "all_flat_t_0_dome")
+rm(list = setdiff(ls(), objects_to_keep))
+gc()
+
+
+
 #AIC Model selection
 AIC_models <- function(df, param){
     formula1 <- as.formula(paste(param, "~ as.factor(CV_Age) + as.factor(sel_1) + as.factor(sel_2)"))
@@ -44,49 +109,3 @@ AIC_models <- function(df, param){
   AIC_models(subset(olive_flat, olive_flat$sample_size == 500), "t_0_RE")
   AIC_models(subset(calico_flat, calico_flat$sample_size == 500), "t_0_RE") #& calico_flat$sel_2 > 35))
   AIC_models(subset(all_flat, all_flat$sample_size == 500), "t_0_RE")
-
-
-
-#Best fit models
-#think about trying a multispecies model
-
-all_flat_k <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)*as.factor(spp)*as.factor(sample_size), data = all_flat_logistic)
-summary(all_flat_k)
-par(mfrow = c(2, 2))
-plot(all_flat_k)
-par(mfrow = c(1, 1))
-
-all_flat_L_inf <- aov(L_inf_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
-summary(all_flat_L_inf)
-qqnorm(residuals(all_flat_L_inf))
-qqline(residuals(all_flat_L_inf))
-
-all_flat_t_0 <- aov(t_0_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
-summary(all_flat_t_0)
-qqnorm(residuals(all_flat_t_0))
-qqline(residuals(all_flat_t_0))
-
-#look at sample sizes TO DO!!!!!!!!!! This
-all_flat_k_1 <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+spp+as.factor(sample_size), data = all_flat)
-all_flat_k_2 <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+spp, data = subset(all_flat_logistic, all_flat_logistic$sample_size == 1000))
-all_flat_k_3 <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2), data = subset(all_flat, all_flat$sample_size == 1000))
-
-AIC(all_flat_k_1, all_flat_k_2, all_flat_k_3)
-qqnorm(residuals(all_flat_k_2))
-qqline(residuals(all_flat_k_2))
-
-
-
-
-
-summary(aov(k_RE~as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2), data = subset(blackgill_flat, blackgill_flat$sample_size == 500)))
-summary(aov(k_RE~as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2), data = subset(blue_flat, blue_flat$sample_size == 500)))
-summary(aov(k_RE~as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2), data = subset(calico_flat, calico_flat$sample_size == 500)))
-summary(aov(k_RE~as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2), data = subset(olive_flat, olive_flat$sample_size == 500)))
-
-
-mod1 <- aov(k_RE~as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2), data = subset(calico_flat, calico_flat$sample_size == 500))
-plot(mod1)
-
-mod1 <- (aov(k_RE~as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2), data = subset(calico_flat, calico_flat$sample_size == 500 & calico_flat$sel_2 > 35)))
-plot(mod1)
