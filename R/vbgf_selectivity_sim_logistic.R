@@ -76,11 +76,14 @@ n_iter <- 100
 }
 
 # Set up parallel processing (use all available cores)
-plan(multisession, workers = 6)
+plan(multisession, workers = 10)
 
-set.seed(9265)
+set.seed(1748)
 blackgill_results_logistic <- future_apply(blackgill_scenario_logistic, 1, run_OM, n_iter = n_iter)
 blackgill_flat_logistic <- flatten_results(blackgill_results_logistic, blackgill_scenario_logistic)
+
+blackgill_bias_df <- flatten_age_bias(blackgill_results_logistic, blackgill_scenario_logistic, n_iter)
+
 blackgill_mean_vbgf_re_logistic <- mean_vbgf_re(blackgill_results_logistic, n_iter)
 blackgill_results_df_logistic <- data.frame(
   max_age = blackgill_scenario_logistic[, "max_age"],
@@ -106,9 +109,12 @@ blackgill_results_df_logistic <- data.frame(
 )
 
 
-set.seed(9265)
+set.seed(1748)
 blue_results_logistic <- future_apply(blue_scenario_logistic, 1, run_OM, n_iter = n_iter)
 blue_flat_logistic <- flatten_results(blue_results_logistic, blue_scenario_logistic)
+
+blue_bias_df <- flatten_age_bias(blue_results_logistic, blue_scenario_logistic, n_iter)
+
 blue_mean_vbgf_re_logistic <- mean_vbgf_re(blue_results_logistic, n_iter)
 blue_results_df_logistic <- data.frame(
   max_age = blue_scenario_logistic[, "max_age"],
@@ -134,9 +140,12 @@ blue_results_df_logistic <- data.frame(
 )
 
 
-set.seed(9265)
+set.seed(1748)
 olive_results_logistic <- future_apply(olive_scenario_logistic, 1, run_OM, n_iter = n_iter)
 olive_flat_logistic <- flatten_results(olive_results_logistic, olive_scenario_logistic)
+
+olive_bias_df <- flatten_age_bias(olive_results_logistic, olive_scenario_logistic, n_iter)
+
 olive_mean_vbgf_re_logistic <- mean_vbgf_re(olive_results_logistic, n_iter)
 olive_results_df_logistic <- data.frame(
   max_age = olive_scenario_logistic[, "max_age"],
@@ -162,9 +171,12 @@ olive_results_df_logistic <- data.frame(
 )
 
 
-set.seed(9265)
+set.seed(1748)
 calico_results_logistic <- future_apply(calico_scenario_logistic, 1, run_OM, n_iter = n_iter)
 calico_flat_logistic <- flatten_results(calico_results_logistic, calico_scenario_logistic)
+
+calico_bias_df <- flatten_age_bias(calico_results_logistic, calico_scenario_logistic, n_iter)
+
 calico_mean_vbgf_re_logistic <- mean_vbgf_re(calico_results_logistic, n_iter)
 calico_results_df_logistic <- data.frame(
   max_age = calico_scenario_logistic[, "max_age"],
@@ -194,6 +206,14 @@ blue_flat_logistic$spp <- "blue"
 olive_flat_logistic$spp <- "olive"
 calico_flat_logistic$spp <- "calico"
 all_flat_logistic <- rbind(blackgill_flat_logistic, blue_flat_logistic, olive_flat_logistic, calico_flat_logistic)
+
+blackgill_bias_df$spp <- "blackgill"
+blue_bias_df$spp <- "blue"
+olive_bias_df$spp <- "olive"
+calico_bias_df$spp <- "calico"
+bias_flat_logistic <- rbind(blackgill_bias_df, blue_bias_df, olive_bias_df, calico_bias_df)
+
+
 
 save.image("workspace_logistic.RData")
 

@@ -80,7 +80,7 @@ batch_size <- 10
 }
 
 
-plan(multisession, workers = 6)
+plan(multisession, workers = 10)
 
 # blackgill
 set.seed(9265)
@@ -141,4 +141,20 @@ all_flat_dome <- rbind(
   calico_flat_dome
 )
 
+blue_bias_df_dome      <- blue_output$age_bias_df
+calico_bias_df_dome    <- calico_output$age_bias_df
+olive_bias_df_dome     <- olive_output$age_bias_df
+blackgill_bias_df_dome <- blackgill_output$age_bias_df
+
+blue_bias_df_dome$spp      <- "Blue"
+calico_bias_df_dome$spp    <- "Calico"
+olive_bias_df_dome$spp     <- "Olive"
+blackgill_bias_df_dome$spp <- "Blackgill"
+
+bias_flat_dome <- rbind(
+  blue_bias_df_dome, 
+  calico_bias_df_dome, 
+  olive_bias_df_dome, 
+  blackgill_bias_df_dome
+)
 save.image("workspace_dome.RData")

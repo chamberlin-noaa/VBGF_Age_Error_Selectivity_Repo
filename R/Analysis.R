@@ -1,111 +1,163 @@
 rm(list = ls())
 gc()
 
-#Logistic ANOVAs
+setwd("G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/R")
+source("Functions.R")
+
+library(broom)
+library(dplyr)
+library(ggplot2)
+library(gratia)
+library(mgcv)
+
+#Logistic selectivity GAMs
 load("G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/R/workspace_logistic.RData")
-all_flat_k_logistic <- aov(k_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
-summary(all_flat_k_logistic)
-par(mfrow = c(2, 2))
-plot(all_flat_k_logistic)
-par(mfrow = c(1, 1))
+all_reduced <- subset(all_flat_logistic, sel_1 < 400)
 
-all_flat_L_inf_logistic <- aov(L_inf_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
-summary(all_flat_L_inf_logistic)
-par(mfrow = c(2, 2))
-plot(all_flat_L_inf_logistic)
-par(mfrow = c(1, 1))
+gam_k_log <- gam(k_RE ~ s(CV_Age, k = 4) + te(sel_1, sel_2, k = c(5, 5)) + as.factor(spp) + as.factor(sample_size), data = all_reduced, method = "REML")
+gam_L_inf_log <- gam(L_inf_RE ~ s(CV_Age, k = 4) + te(sel_1, sel_2, k = c(5, 5)) + as.factor(spp) + as.factor(sample_size), data = all_reduced, method = "REML")
+gam_t_0_log <- gam(t_0_RE ~ s(CV_Age, k = 4) + te(sel_1, sel_2, k = c(5, 5)) + as.factor(spp) + as.factor(sample_size), data = all_reduced, method = "REML")
 
-all_flat_t_0_logistic <- aov(t_0_RE ~ as.factor(CV_Age)*as.factor(sel_1)*as.factor(sel_2)+as.factor(spp)+as.factor(sample_size), data = all_flat_logistic)
-summary(all_flat_t_0_logistic)
-par(mfrow = c(2, 2))
-plot(all_flat_t_0_logistic)
-par(mfrow = c(1, 1))
+clean_k_log <- refit_clean_model(gam_k_log, all_reduced, "k_RE", 3)
+clean_L_inf_log <- refit_clean_model(gam_L_inf_log, all_reduced, "L_inf_RE", 3)
+clean_t_0_log <- refit_clean_model(gam_t_0_log, all_reduced, "t_0_RE", 3)
 
-objects_to_keep <- c("all_flat_k_logistic", "all_flat_L_inf_logistic", "all_flat_t_0_logistic")
-rm(list = setdiff(ls(), objects_to_keep))
+print(bind_rows(clean_k_log$summary, clean_L_inf_log$summary, clean_t_0_log$summary))
+
+draw(clean_k_log$model, dist = 100)
+draw(clean_L_inf_log$model, dist = 100)
+draw(clean_t_0_log$model, dist = 100)
+
+par(mfrow = c(2, 2))
+gam.check(clean_k_log$model)
+gam.check(clean_L_inf_log$model)
+gam.check(clean_t_0_log$model)
+
+combined_logistic <- bind_rows(
+  extract_gam_results(clean_k_log$model, "k_RE"),
+  extract_gam_results(clean_L_inf_log$model, "L_inf_RE"),
+  extract_gam_results(clean_t_0_log$model, "t_0_RE")
+) %>%
+  mutate(Term = case_when(
+    Term == "(Intercept)" ~ "Intercept (Blackgill, N=500)",
+    Term == "as.factor(spp)blue" ~ "Species: Blue",
+    Term == "as.factor(spp)calico" ~ "Species: Calico",
+    Term == "as.factor(spp)olive" ~ "Species: Olive",
+    Term == "as.factor(sample_size)1000" ~ "Sample Size: 1000",
+    Term == "s(CV_Age)" ~ "Aging Error (s(CV_Age))",
+    Term == "te(sel_1,sel_2)" ~ "Selectivity Interaction (te(sel_1, sel_2))",
+    TRUE ~ Term
+  ))
+
+write.csv(combined_logistic, "G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/Logistic_VBGF_GAM_All_Models_Results.csv", row.names = FALSE)
+
+#Size-at-Age BAM
+bias_flat_logistic_reduced <- subset(bias_flat_logistic, sel_1 < 400) %>%
+  group_by(spp) %>% mutate(relative_age = age / max(age)) %>% ungroup()
+
+bam_size_log <- bam(relative_error ~ s(relative_age) + s(CV_Age, k = 4) + te(relative_age, sel_1) + te(relative_age, sel_2) + as.factor(spp) + as.factor(sample_size),
+                    data = bias_flat_logistic_reduced, method = "fREML", discrete = TRUE)
+
+clean_size_log <- refit_clean_model(bam_size_log, bias_flat_logistic_reduced, "size_at_age", 3)
+print(clean_size_log$summary)
+
+draw(clean_size_log$model, dist = 100)
+
+plot_large_diagnostics(clean_size_log$model)
+
+results_size_log <- extract_gam_results(clean_size_log$model, "Size_at_Age_RE") %>%
+  mutate(Term = case_when(
+    Term == "(Intercept)" ~ "Intercept (Blackgill, N=500)",
+    Term == "as.factor(spp)blue" ~ "Species: Blue",
+    Term == "as.factor(spp)calico" ~ "Species: Calico",
+    Term == "as.factor(spp)olive" ~ "Species: Olive",
+    Term == "as.factor(sample_size)1000" ~ "Sample Size: 1000",
+    Term == "s(relative_age)" ~ "Relative Age (s(relative_age))",
+    Term == "s(CV_Age)" ~ "Aging Error (s(CV_Age))",
+    Term == "te(relative_age,sel_1)" ~ "Age x L50 Interaction (te(relative_age, sel_1))",
+    Term == "te(relative_age,sel_2)" ~ "Age x Steepness Interaction (te(relative_age, sel_2))",
+    TRUE ~ Term
+  ))
+
+write.csv(results_size_log, "G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/Logistic_Size_at_Age_BAM_Results.csv", row.names = FALSE)
+
+
+
+#Dome selectivity GAMs
+rm(list = ls())
 gc()
 
-#Dome ANOVAs
+setwd("G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/R")
+source("Functions.R")
+
 load("G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/R/workspace_dome.RData")
+all_reduced_dome <- subset(all_flat_dome, B1 != 400 & B2 != 0 & B3 != 12 & B4 != 13)
 
-#remove some scenarios because ANOVA requires too much RAM
-all_reduced <- subset(all_flat_dome, B1 != 400)
-all_reduced <- subset(all_reduced, B2 != 0)
-all_reduced <- subset(all_reduced, B3 != 12)
-all_reduced <- subset(all_reduced, B4 != 13)
+gam_k_dome <- gam(k_RE ~ s(CV_Age, k = 4) + te(B1, B2, k = c(4, 4)) + te(B3, B4, k = c(4, 4)) + as.factor(spp) + as.factor(sample_size), data = all_reduced_dome, method = "REML")
+gam_L_inf_dome <- gam(L_inf_RE ~ s(CV_Age, k = 4) + te(B1, B2, k = c(4, 4)) + te(B3, B4, k = c(4, 4)) + as.factor(spp) + as.factor(sample_size), data = all_reduced_dome, method = "REML")
+gam_t_0_dome <- gam(t_0_RE ~ s(CV_Age, k = 4) + te(B1, B2, k = c(4, 4)) + te(B3, B4, k = c(4, 4)) + as.factor(spp) + as.factor(sample_size), data = all_reduced_dome, method = "REML")
 
-objects_to_keep <- c("all_reduced")
-rm(list = setdiff(ls(), objects_to_keep))
-gc()
+clean_k_dome <- refit_clean_model(gam_k_dome, all_reduced_dome, "k_RE", 3)
+clean_L_inf_dome <- refit_clean_model(gam_L_inf_dome, all_reduced_dome, "L_inf_RE", 3)
+clean_t_0_dome <- refit_clean_model(gam_t_0_dome, all_reduced_dome, "t_0_RE", 3)
 
+print(bind_rows(clean_k_dome$summary, clean_L_inf_dome$summary, clean_t_0_dome$summary))
 
-all_flat_k_dome <- aov(k_RE ~ as.factor(CV_Age)*as.factor(B1)*as.factor(B2)*as.factor(B3)*as.factor(B4)+as.factor(spp)+as.factor(sample_size), data = all_reduced)
-summary(all_flat_k_dome)
+draw(clean_k_dome$model, dist = 100)
+draw(clean_L_inf_dome$model, dist = 100)
+draw(clean_t_0_dome$model, dist = 100)
+
 par(mfrow = c(2, 2))
-plot(all_flat_k_dome)
-par(mfrow = c(1, 1))
+gam.check(clean_k_dome$model)
+gam.check(clean_L_inf_dome$model)
+gam.check(clean_t_0_dome$model)
 
-all_flat_L_inf_dome <- aov(L_inf_RE ~ as.factor(CV_Age)*as.factor(B1)*as.factor(B2)*as.factor(B3)*as.factor(B4)+as.factor(spp)+as.factor(sample_size), data = all_reduced)
-summary(all_flat_L_inf_dome)
-par(mfrow = c(2, 2))
-plot(all_flat_L_inf_dome)
-par(mfrow = c(1, 1))
+combined_dome <- bind_rows(
+  extract_gam_results(clean_k_dome$model, "k_RE"),
+  extract_gam_results(clean_L_inf_dome$model, "L_inf_RE"),
+  extract_gam_results(clean_t_0_dome$model, "t_0_RE")
+) %>%
+  mutate(Term = case_when(
+    Term == "(Intercept)" ~ "Intercept (Blackgill, N=500)",
+    Term == "as.factor(spp)blue" ~ "Species: Blue",
+    Term == "as.factor(spp)calico" ~ "Species: Calico",
+    Term == "as.factor(spp)olive" ~ "Species: Olive",
+    Term == "as.factor(sample_size)1000" ~ "Sample Size: 1000",
+    Term == "s(CV_Age)" ~ "Aging Error (s(CV_Age))",
+    Term == "te(B1,B2)" ~ "Ascending Selectivity (te(B1, B2))",
+    Term == "te(B3,B4)" ~ "Descending Selectivity (te(B3, B4))",
+    TRUE ~ Term
+  ))
 
-all_flat_t_0_dome <- aov(t_0_RE ~ as.factor(CV_Age)*as.factor(B1)*as.factor(B2)*as.factor(B3)*as.factor(B4)+as.factor(spp)+as.factor(sample_size), data = all_reduced)
-summary(all_flat_t_0_dome)
-par(mfrow = c(2, 2))
-plot(all_flat_t_0_dome)
-par(mfrow = c(1, 1))
+write.csv(combined_dome, "G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/Dome_VBGF_GAM_All_Models_Results.csv", row.names = FALSE)
 
-objects_to_keep <- c("all_flat_k_logistic", "all_flat_L_inf_logistic", "all_flat_t_0_logistic", "all_flat_k_dome", "all_flat_L_inf_dome", "all_flat_t_0_dome")
-rm(list = setdiff(ls(), objects_to_keep))
-gc()
+#Size-at-Age BAM
+bias_flat_dome <- bias_flat_dome %>% group_by(spp) %>% mutate(relative_age = age / max(age)) %>% ungroup()
 
+bam_size_dome <- bam(relative_error ~ s(relative_age) + s(CV_Age, k = 4) + te(relative_age, B1, k = c(5, 4)) + te(relative_age, B2, k = c(5, 4)) + te(relative_age, B3, k = c(5, 4)) + te(relative_age, B4, k = c(5, 4)) + as.factor(spp) + as.factor(sample_size),
+                     data = bias_flat_dome, method = "fREML", discrete = TRUE)
 
+clean_size_dome <- refit_clean_model(bam_size_dome, bias_flat_dome, "size_at_age", 3)
+print(clean_size_dome$summary)
 
-#AIC Model selection
-AIC_models <- function(df, param){
-    formula1 <- as.formula(paste(param, "~ as.factor(CV_Age) + as.factor(sel_1) + as.factor(sel_2)"))
-    formula2 <- as.formula(paste(param, "~ (as.factor(CV_Age) + as.factor(sel_1)) * as.factor(sel_2)"))
-    formula3 <- as.formula(paste(param, "~ (as.factor(CV_Age) + as.factor(sel_2)) * as.factor(sel_1)"))
-    formula4 <- as.formula(paste(param, "~ as.factor(CV_Age) * as.factor(sel_1) * as.factor(sel_2)"))
-    
-    formula5 <- as.formula(paste("log(", param, "+1.00001)~ as.factor(CV_Age) + as.factor(sel_1) + as.factor(sel_2)"))
-    formula6 <- as.formula(paste("log(", param, "+1.00001)~ (as.factor(CV_Age) + as.factor(sel_1)) * as.factor(sel_2)"))
-    formula7 <- as.formula(paste("log(", param, "+1.00001)~ (as.factor(CV_Age) + as.factor(sel_2)) * as.factor(sel_1)"))
-    formula8 <- as.formula(paste("log(", param, "+1.00001)~ as.factor(CV_Age) * as.factor(sel_1) * as.factor(sel_2)"))
-    
-    mod1 <- aov(formula1, data = df)
-    mod2 <- aov(formula2, data = df)
-    mod3 <- aov(formula3, data = df)
-    mod4 <- aov(formula4, data = df)
-    
-    mod5 <- aov(formula5, data = df)
-    mod6 <- aov(formula6, data = df)
-    mod7 <- aov(formula7, data = df)
-    mod8 <- aov(formula8, data = df)
-    
-    AIC_results <- AIC(mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8)
-    
-    AIC_results$delta_AIC <- AIC_results$AIC - min(AIC_results$AIC)
-    
-    return(AIC_results)
-  }
-  
-  AIC_models(subset(blue_flat, blue_flat$sample_size == 500), "k_RE")
-  AIC_models(subset(blackgill_flat, blackgill_flat$sample_size == 500), "k_RE")
-  AIC_models(subset(olive_flat, olive_flat$sample_size == 500), "k_RE")
-  AIC_models(subset(calico_flat, calico_flat$sample_size == 500), "k_RE") #& calico_flat$sel_2 > 35))
-  AIC_models(subset(all_flat, all_flat$sample_size == 500), "k_RE")
-  
-  AIC_models(subset(blue_flat, blue_flat$sample_size == 500), "L_inf_RE")
-  AIC_models(subset(blackgill_flat, blackgill_flat$sample_size == 500), "L_inf_RE")
-  AIC_models(subset(olive_flat, olive_flat$sample_size == 500), "L_inf_RE")
-  AIC_models(subset(calico_flat, calico_flat$sample_size == 500), "L_inf_RE") #& calico_flat$sel_2 > 35))
-  AIC_models(subset(all_flat, all_flat$sample_size == 500), "L_inf_RE")
-  
-  AIC_models(subset(blue_flat, blue_flat$sample_size == 500), "t_0_RE")
-  AIC_models(subset(blackgill_flat, blackgill_flat$sample_size == 500), "t_0_RE")
-  AIC_models(subset(olive_flat, olive_flat$sample_size == 500), "t_0_RE")
-  AIC_models(subset(calico_flat, calico_flat$sample_size == 500), "t_0_RE") #& calico_flat$sel_2 > 35))
-  AIC_models(subset(all_flat, all_flat$sample_size == 500), "t_0_RE")
+draw(clean_size_dome$model, dist = 100)
+
+plot_large_diagnostics(clean_size_dome$model)
+
+results_size_dome <- extract_gam_results(clean_size_dome$model, "Size_at_Age_RE") %>%
+  mutate(Term = case_when(
+    Term == "(Intercept)" ~ "Intercept (Blackgill, N=500)",
+    Term == "as.factor(spp)blue" ~ "Species: Blue",
+    Term == "as.factor(spp)calico" ~ "Species: Calico",
+    Term == "as.factor(spp)olive" ~ "Species: Olive",
+    Term == "as.factor(sample_size)1000" ~ "Sample Size: 1000",
+    Term == "s(relative_age)" ~ "Relative Age (s(relative_age))",
+    Term == "s(CV_Age)" ~ "Aging Error (s(CV_Age))",
+    Term == "te(relative_age,B1)" ~ "Age x Asc. Peak Interaction (te(relative_age, B1))",
+    Term == "te(relative_age,B2)" ~ "Age x Asc. Slope Interaction (te(relative_age, B2))",
+    Term == "te(relative_age,B3)" ~ "Age x Desc. Slope Interaction (te(relative_age, B3))",
+    Term == "te(relative_age,B4)" ~ "Age x Desc. Peak Interaction (te(relative_age, B4))",
+    TRUE ~ Term
+  ))
+
+write.csv(results_size_dome, "G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo/Dome_Size_at_Age_BAM_Results.csv", row.names = FALSE)

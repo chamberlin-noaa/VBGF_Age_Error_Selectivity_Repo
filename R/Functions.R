@@ -148,8 +148,28 @@ OM <- function(max_age, M, L_inf, k, t_0, CV_L, shape, sel_1, sel_2, B1, B2, B3,
   vbgf_params_RE[3] <- (vbgf_params$vbto-t_0)/t_0
   vbgf_params_RE[4] <- (vbgf_params$vbcv-CV_L)/CV_L
   
+  #Calculate relative error in size-at-age
+  obs_data <- data.frame(
+    length = sampled_fish$length,
+    obs_age = obs_age
+  )
+  
+  sampled_mean_size_at_age <- obs_data %>%
+    group_by(obs_age) %>%
+    summarize(mean_len_obs = mean(length), .groups = 'drop')
+  
+  # Calculate the relative error in size-at-age
+  age_specific_RE <- sampled_mean_size_at_age %>%
+    mutate(
+      true_pop_mean = mean_len[obs_age],
+      error = mean_len_obs - true_pop_mean,
+      relative_error = error / true_pop_mean
+    ) %>%
+    rename(age = obs_age)
+  
+  
   #return(list(vnt, mean_len_samp, obs_len, sampled_true_ages, obs_age, vbgf_params, vbgf_params_RE))
-  return(list(vbgf_params_RE, sampled_fish$age, sampled_fish$length, obs_age, vbgf_params))
+  return(list(vbgf_params_RE, sampled_fish$age, sampled_fish$length, obs_age, vbgf_params, age_specific_RE))
 }
 
 
@@ -225,6 +245,7 @@ dome_batch <- function(scenario_matrix, species_name, n_iter, batch_size) {
   
   results_list <- list()
   flat_list <- list()
+  age_bias_list <- list()
   
   for (i in 1:n_batches) {
     
@@ -236,6 +257,9 @@ dome_batch <- function(scenario_matrix, species_name, n_iter, batch_size) {
     current_scenarios <- scenario_matrix[start_row:end_row, ]
     
     batch_results <- future_apply(current_scenarios, 1, run_OM, n_iter = n_iter)
+    
+    batch_age_bias <- flatten_age_bias_dome(batch_results, current_scenarios, n_iter)
+    age_bias_list[[i]] <- batch_age_bias
     
     flat_results <- flatten_results(batch_results, current_scenarios)
     mean_re <- mean_vbgf_re(batch_results, n_iter)
@@ -267,14 +291,108 @@ dome_batch <- function(scenario_matrix, species_name, n_iter, batch_size) {
     flat_list[[i]] <- flat_results
     
     #remove batch to prevent memory issues
-    rm(batch_results, flat_results, mean_re, results_df, current_scenarios)
+    rm(batch_results, flat_results, mean_re, results_df, current_scenarios, batch_age_bias)
     gc()
   }
 
   final_results_df <- do.call(rbind, results_list)
   final_flat_df <- do.call(rbind, flat_list)
+  final_age_bias_df <- do.call(rbind, age_bias_list)
   
   cat(sprintf("Finished processing for %s.\n\n", species_name))
   
-  return(list(results_df = final_results_df, flat_df = final_flat_df))
+  return(list(results_df = final_results_df, flat_df = final_flat_df, age_bias_df = final_age_bias_df))
+}
+
+flatten_age_bias <- function(spp_results, spp_scenario, n_iter) {
+  bias_list <- vector("list", length(spp_results) * n_iter)
+  counter <- 1
+  
+  for (i in 1:length(spp_results)) {
+    for (j in 1:n_iter) {
+      iter_bias <- spp_results[[i]][[j]][[6]]
+      iter_bias$iteration <- j
+      scenario_params <- spp_scenario[i, , drop = FALSE]
+      scenario_df <- as.data.frame(scenario_params)
+      
+      combined <- cbind(iter_bias, scenario_df, row.names = NULL)
+      bias_list[[counter]] <- combined
+      counter <- counter + 1
+    }
+  }
+  return(do.call(rbind, bias_list))
+}
+
+flatten_age_bias_dome <- function(results_list, scenario_matrix, n_iter) {
+  age_data_list <- list()
+  
+  for (i in seq_along(results_list)) {
+    scn_df <- as.data.frame(scenario_matrix[i, , drop = FALSE])
+    res <- results_list[[i]]
+    
+    for (j in seq_len(n_iter)) {
+      if (!is.null(res[[j]])) {
+        sim_age_data <- res[[j]][[6]]
+        
+        if (!is.null(sim_age_data) && nrow(sim_age_data) > 0) {
+          sim_age_data$Iter <- j
+          combined <- cbind(sim_age_data, scn_df, row.names = NULL)
+          
+          age_data_list[[length(age_data_list) + 1]] <- combined
+        }
+      }
+    }
+  }
+  
+  do.call(rbind, age_data_list)
+}
+
+extract_gam_results <- function(model_obj, model_name) {
+  para <- tidy(model_obj, parametric = TRUE) %>%
+    mutate(Model = model_name, Type = "Fixed Effect") %>%
+    select(Model, Type, Term = term, Estimate = estimate, 
+           Std_Error = std.error, Statistic = statistic, p_value = p.value)
+  
+  smooths <- tidy(model_obj, parametric = FALSE) %>%
+    mutate(Model = model_name, Type = "Smooth Term", Estimate = edf, Std_Error = NA) %>%
+    select(Model, Type, Term = term, Estimate, 
+           Std_Error, Statistic = statistic, p_value = p.value)
+  
+  return(bind_rows(para, smooths))
+}
+
+refit_clean_model <- function(model, data, model_name, sd_thresh) {
+  resids <- as.vector(scale(residuals(model)))
+  clean_data <- data[abs(resids) <= sd_thresh, ]
+  clean_model <- update(model, data = clean_data)
+  
+  n_orig <- nrow(data)
+  n_rem <- n_orig - nrow(clean_data)
+  
+  summary_row <- data.frame(
+    Model = model_name,
+    Original_N = n_orig,
+    Removed_N = n_rem,
+    Proportion_Removed = n_rem / n_orig,
+    Percent_Removed = paste0(round((n_rem / n_orig) * 100, 3), "%")
+  )
+  
+  return(list(model = clean_model, summary = summary_row))
+}
+
+plot_large_diagnostics <- function(model_obj, sample_n = 10000) {
+  diag_data <- data.frame(
+    Fitted = fitted(model_obj),
+    Residuals = residuals(model_obj),
+    Response = model_obj$y
+  ) %>% sample_n(sample_n)
+  
+  par(mfrow = c(2, 2))
+  qqnorm(diag_data$Residuals, main = "QQ-plot of residuals")
+  qqline(diag_data$Residuals, col = "red", lwd = 2)
+  hist(diag_data$Residuals, breaks = 30, xlab = "Residuals", main = "Histogram of residuals")
+  plot(diag_data$Fitted, diag_data$Residuals, xlab = "Linear predictor", ylab = "Residuals", 
+       main = "Resids vs. linear pred", pch = 16, col = rgb(0,0,0,0.2))
+  plot(diag_data$Fitted, diag_data$Response, xlab = "Fitted Values", ylab = "Response", 
+       main = "Response vs. Fitted Values", pch = 16, col = rgb(0,0,0,0.2))
 }
