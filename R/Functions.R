@@ -396,3 +396,211 @@ plot_large_diagnostics <- function(model_obj, sample_n = 10000) {
   plot(diag_data$Fitted, diag_data$Response, xlab = "Fitted Values", ylab = "Response", 
        main = "Response vs. Fitted Values", pch = 16, col = rgb(0,0,0,0.2))
 }
+
+param_box_plot <- function(df, param, y_range, y_range_break){
+  base_plot <- ggplot(df, aes(x = as.factor(sel_1), y = {{ param }}, fill = as.factor(sel_2))) +
+    geom_boxplot() +
+    geom_hline(yintercept = 0, color = "red", linewidth = 0.8) +
+    facet_wrap(~ CV_Age, ncol = 5, labeller = label_bquote(CV[a]~"="~.(CV_Age))) +
+    scale_y_continuous(limits = c(-y_range, y_range), breaks = seq(-y_range, y_range, by = y_range_break)) +
+    labs(fill = expression(Phi[2])) +
+    theme_minimal() +
+    theme(
+      strip.placement = "outside",
+      panel.spacing = unit(-1.75, "pt"),
+      panel.grid = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 2),
+      axis.text.x = element_text(size = 10),
+      axis.text.y = element_text(size = 10),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      strip.text = element_text(size = 10)
+    )
+  
+  return(base_plot)
+}
+
+create_comparison_plot <- function(param, y_axis_label, sample_size_sub, sel_1_sub, sel_2_sub, y_range, y_range_break) {
+  param_symbol <- rlang::sym(param)
+  
+  blackgill_data <- subset(blackgill_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
+  blue_data <- subset(blue_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
+  olive_data <- subset(olive_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
+  calico_data <- subset(calico_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
+  
+  p1 <- param_box_plot(blackgill_data, !!param_symbol, y_range, y_range_break)
+  p2 <- param_box_plot(blue_data, !!param_symbol, y_range, y_range_break)
+  p3 <- param_box_plot(olive_data, !!param_symbol, y_range, y_range_break)
+  p4 <- param_box_plot(calico_data, !!param_symbol, y_range, y_range_break)
+  
+  combined <- (p1 / p2 / p3 / p4) + plot_layout(guides = "collect") & theme(legend.position = "right")
+  
+  final_plot <- ggdraw() +
+    draw_plot(combined, x = 0.02, y = 0.02, width = 0.99, height = 0.99) +
+    draw_label(expression(bold(Phi[1])), x = 0.5, y = 0.01, vjust = 0, size = 16, fontface = "bold") +
+    draw_label(y_axis_label, x = 0.01, y = 0.5, angle = 90, vjust = 1, size = 16, fontface = "bold")
+  
+  return(final_plot)
+}
+
+
+format_gam_plot <- function(gam_model, y_label) {
+  p <- draw(gam_model, rug = FALSE)
+  
+  p[[1]] <- p[[1]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(CV[Age]),
+      y = y_label
+    )
+  
+  p[[2]] <- p[[2]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(Phi[1]), 
+      y = expression(Phi[2])
+    )
+  
+  return(p)
+}
+
+
+format_size_bam_plot <- function(bam_model, y_label) {
+  p <- draw(bam_model, rug = FALSE)
+  
+  p[[1]] <- p[[1]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = "Relative Age",
+      y = y_label
+    )
+  
+  p[[2]] <- p[[2]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(CV[Age]),
+      y = y_label
+    )
+  
+  p[[3]] <- p[[3]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = "Relative Age", 
+      y = expression(Phi[1])
+    )
+  
+  p[[4]] <- p[[4]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = "Relative Age", 
+      y = expression(Phi[2])
+    )
+  
+  return(p)
+}
+
+format_gam_plot_dome <- function(gam_model, y_label) {
+  p <- draw(gam_model, rug = FALSE, dist = 100, ncol = 3, nrow = 1)
+  
+  p[[1]] <- p[[1]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(CV[Age]),
+      y = y_label
+    )
+  
+  p[[2]] <- p[[2]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(B[1]), 
+      y = expression(B[2])
+    )
+  
+  p[[3]] <- p[[3]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(B[3]), 
+      y = expression(B[4])
+    )
+  
+  return(p)
+}
+
+
+format_size_bam_plot_dome <- function(bam_model, y_label) {
+  p <- draw(bam_model, rug = FALSE, dist = 100, ncol = 3, nrow = 2)
+  
+  p[[1]] <- p[[1]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = "Relative Age",
+      y = y_label
+    )
+  
+  p[[2]] <- p[[2]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(CV[Age]),
+      y = y_label
+    )
+  
+  p[[3]] <- p[[3]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(B[1]), 
+      y = "Relative Age"
+    )
+  
+  p[[4]] <- p[[4]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(B[2]), 
+      y = "Relative Age"
+    )
+  
+  p[[5]] <- p[[5]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(B[3]), 
+      y = "Relative Age"
+    )
+  
+  p[[6]] <- p[[6]] + 
+    labs(
+      title = NULL, 
+      subtitle = NULL, 
+      caption = NULL,  
+      x = expression(B[4]), 
+      y = "Relative Age"
+    )
+  
+  return(p)
+}

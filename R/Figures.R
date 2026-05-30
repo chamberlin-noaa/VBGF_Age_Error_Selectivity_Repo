@@ -10,53 +10,6 @@ library(gratia)
 setwd("G:/My Drive/Research/VBGF_Age_Error_Selectivity_Repo")
 source("./R/Functions.R")
 
-#Boxplot
-param_box_plot <- function(df, param, y_range, y_range_break){
-  base_plot <- ggplot(df, aes(x = as.factor(sel_1), y = {{ param }}, fill = as.factor(sel_2))) +
-    geom_boxplot() +
-    geom_hline(yintercept = 0, color = "red", linewidth = 0.8) +
-    facet_wrap(~ CV_Age, ncol = 5, labeller = label_bquote(CV[a]~"="~.(CV_Age))) +
-    scale_y_continuous(limits = c(-y_range, y_range), breaks = seq(-y_range, y_range, by = y_range_break)) +
-    labs(fill = expression(Phi[2])) +
-    theme_minimal() +
-    theme(
-      strip.placement = "outside",
-      panel.spacing = unit(-1.75, "pt"),
-      panel.grid = element_blank(),
-      panel.border = element_rect(color = "black", fill = NA, linewidth = 2),
-      axis.text.x = element_text(size = 10),
-      axis.text.y = element_text(size = 10),
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      strip.text = element_text(size = 10)
-    )
-  
-  return(base_plot)
-}
-
-create_comparison_plot <- function(param, y_axis_label, sample_size_sub, sel_1_sub, sel_2_sub, y_range, y_range_break) {
-  param_symbol <- rlang::sym(param)
-  
-  blackgill_data <- subset(blackgill_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
-  blue_data <- subset(blue_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
-  olive_data <- subset(olive_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
-  calico_data <- subset(calico_flat_logistic, sample_size == sample_size_sub & sel_1 %in% sel_1_sub & round(sel_2, 3) %in% round(sel_2_sub, 3))
-  
-  p1 <- param_box_plot(blackgill_data, !!param_symbol, y_range, y_range_break)
-  p2 <- param_box_plot(blue_data, !!param_symbol, y_range, y_range_break)
-  p3 <- param_box_plot(olive_data, !!param_symbol, y_range, y_range_break)
-  p4 <- param_box_plot(calico_data, !!param_symbol, y_range, y_range_break)
-  
-  combined <- (p1 / p2 / p3 / p4) + plot_layout(guides = "collect") & theme(legend.position = "right")
-  
-  final_plot <- ggdraw() +
-    draw_plot(combined, x = 0.02, y = 0.02, width = 0.99, height = 0.99) +
-    draw_label(expression(bold(Phi[1])), x = 0.5, y = 0.01, vjust = 0, size = 16, fontface = "bold") +
-    draw_label(y_axis_label, x = 0.01, y = 0.5, angle = 90, vjust = 1, size = 16, fontface = "bold")
-  
-  return(final_plot)
-}
-
 sel_1_sub <- c(0, 200, 350)
 sel_2_sub <- c(0.010, 0.060, 0.110, 0.160, 0.210)
 
@@ -180,33 +133,10 @@ ggsave("t_0_RE_boxplot_n_500_logistic_dif_subset.png", plot = t_0_re_plot, width
   ggsave("selectivity_plot.png", plot = final_plot, width = 6.5, height = 4, units = "in", bg = "white")
 }
 
-format_gam_plot <- function(gam_model, y_label) {
-  p <- draw(gam_model, rug = FALSE)
-  
-  p[[1]] <- p[[1]] + 
-    labs(
-      title = NULL, 
-      subtitle = NULL, 
-      caption = NULL,  
-      x = expression(CV[Age]),
-      y = y_label
-    )
-  
-  p[[2]] <- p[[2]] + 
-    labs(
-      title = NULL, 
-      subtitle = NULL, 
-      caption = NULL,  
-      x = expression(Phi[1]), 
-      y = expression(Phi[2])
-    )
-  
-  return(p)
-}
-
-p_k <- format_gam_plot(gam_k_clean, expression(paste("Effect on ", RE[k])))
-p_L <- format_gam_plot(gam_L_clean, expression(paste("Effect on ", RE[L[infinity]])))
-p_t <- format_gam_plot(gam_t_clean, expression(paste("Effect on ", RE[t[0]])))
+#Logistic GAM plots
+p_k <- format_gam_plot(clean_k_log$model, expression(paste("Effect on ", RE[k])))
+p_L <- format_gam_plot(clean_L_inf_log$model, expression(paste("Effect on ", RE[L[infinity]])))
+p_t <- format_gam_plot(clean_t_0_log$model, expression(paste("Effect on ", RE[t[0]])))
 
 final_combined_plot <- (p_k / p_L / p_t) & theme_classic()
 
@@ -214,49 +144,8 @@ final_combined_plot
 
 ggsave("logistic_vbgf_gam.png", plot = final_combined_plot, width = 8.5, height = 11, units = "in", bg = "white")
 
-format_size_bam_plot <- function(bam_model, y_label) {
-  p <- draw(bam_model, rug = FALSE)
-  
-  p[[1]] <- p[[1]] + 
-    labs(
-      title = NULL, 
-      subtitle = NULL, 
-      caption = NULL,  
-      x = "Age",
-      y = y_label
-    )
-  
-  p[[2]] <- p[[2]] + 
-    labs(
-      title = NULL, 
-      subtitle = NULL, 
-      caption = NULL,  
-      x = expression(CV[Age]),
-      y = "Partial effect"
-    )
-  
-  p[[3]] <- p[[3]] + 
-    labs(
-      title = NULL, 
-      subtitle = NULL, 
-      caption = NULL,  
-      x = "Age", 
-      y = expression(Phi[1])
-    )
-  
-  p[[4]] <- p[[4]] + 
-    labs(
-      title = NULL, 
-      subtitle = NULL, 
-      caption = NULL,  
-      x = "Age", 
-      y = expression(Phi[2])
-    )
-  
-  return(p)
-}
-
-size_plot <- format_size_bam_plot(bam_size_at_age_relative_clean, expression(paste("Effect on ", RE[size-at-age])))
+#Logistic size-at-age BAM plot
+size_plot <- format_size_bam_plot(clean_size_log$model, expression(paste("Effect on ", RE[size-at-age])))
 
 final_size_plot <- size_plot & theme_classic()
 
@@ -264,3 +153,24 @@ final_size_plot
 
 ggsave("logistic_size_at_age_bam.png", plot = final_size_plot, width = 8.5, height = 8.5, units = "in", bg = "white")
 
+
+#Dome GAM plots
+p_k_dome <- format_gam_plot_dome(clean_k_dome$model, expression(paste("Effect on ", RE[k])))
+p_L_dome <- format_gam_plot_dome(clean_L_inf_dome$model, expression(paste("Effect on ", RE[L[infinity]])))
+p_t_dome <- format_gam_plot_dome(clean_t_0_dome$model, expression(paste("Effect on ", RE[t[0]])))
+
+final_combined_plot_dome <- (p_k_dome / p_L_dome / p_t_dome) & theme_classic()
+
+final_combined_plot_dome
+
+ggsave("dome_vbgf_gam.png", plot = final_combined_plot_dome, width = 12, height = 11, units = "in", bg = "white")
+
+
+#Dome size-at-age GAM plot
+size_plot_dome <- format_size_bam_plot_dome(clean_size_dome$model, expression(paste("Effect on ", RE[size-at-age])))
+
+final_size_plot_dome <- size_plot_dome & theme_classic()
+
+final_size_plot_dome
+
+ggsave("dome_size_at_age_bam.png", plot = final_size_plot_dome, width = 12, height = 8, units = "in", bg = "white")
